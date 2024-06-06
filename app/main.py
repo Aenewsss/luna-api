@@ -1,21 +1,20 @@
 import json
-from fastapi import FastAPI
-from dotenv import load_dotenv
-import os
+from fastapi import Depends, FastAPI
 from groq import Groq
-from classes import MessageRequest
-from starlette.responses import StreamingResponse
-from messages import messages
-from tools import tools
+from app.classes.classes import MessageRequest, User
+from app.environments import LLMODEL, LUNA_DEV_KEY
+from app.constants.messages import messages
+from app.constants.tools import tools
+from app.auth.auth import router as auth_router, validate_token
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-load_dotenv()
+app = FastAPI(title='Luna API', root_path='/api')
 
-app = FastAPI()
+app.include_router(auth_router, prefix='/auth')
 
-LUNA_DEV_KEY = os.getenv("LUNA_DEV_KEY")
 client = Groq(api_key=LUNA_DEV_KEY)
-MODEL = "llama3-8b-8192"
-
 
 def save_info():
     print("\n\nsave info into db")
@@ -23,15 +22,16 @@ def save_info():
 
 
 @app.post("/chat-luna")
-async def chatLuna(request: MessageRequest):
+async def chatLuna(request: MessageRequest,current_user: User = Depends(validate_token)):
 
+    user_name=current_user.name
     message = request.message
-    print("message:", message)
 
+    messages.append({"role": "system", "content": "Antes de qualquer cosia, dê boas vindas ao usuário falando o nome dele: " + user_name})
     messages.append({"role": "user", "content": message})
 
     completion = client.chat.completions.create(
-        model=MODEL,
+        model=LLMODEL,
         messages=messages,
         tools=tools,
         temperature=1,
@@ -62,10 +62,14 @@ async def chatLuna(request: MessageRequest):
                 }
             )
 
-    second_completion = client.chat.completions.create(model=MODEL, messages=messages)
+    second_completion = client.chat.completions.create(model=LLMODEL, messages=messages)
     return second_completion.choices[0].message.content
 
 
 @app.get("/")
 async def helloWorld():
     return {"message": "Hello World!"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8888)

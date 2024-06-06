@@ -1,6 +1,6 @@
 import os
 from fastapi import FastAPI
-from classes import MessageRequest
+from app.classes.classes import MessageRequest
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
