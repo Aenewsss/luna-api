@@ -17,7 +17,8 @@ app.include_router(auth_router, prefix='/auth')
 client = Groq(api_key=LUNA_DEV_KEY)
 
 def save_info():
-    print("\n\nsave info into db")
+    print("\n\nsave info into db line 20")
+
     return json.dumps({"message": "Informação salva com sucesso"})
 
 
@@ -27,7 +28,7 @@ async def chatLuna(request: MessageRequest,current_user: User = Depends(validate
     user_name=current_user.name
     message = request.message
 
-    messages.append({"role": "system", "content": "Antes de qualquer cosia, dê boas vindas ao usuário falando o nome dele: " + user_name})
+    messages.append({"role": "system", "content": "Antes de qualquer coisa, dê boas vindas ao usuário falando o nome dele: " + user_name})
     messages.append({"role": "user", "content": message})
 
     completion = client.chat.completions.create(
