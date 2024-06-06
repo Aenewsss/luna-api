@@ -1,67 +1,71 @@
-import os
+import json
 from fastapi import FastAPI
+from dotenv import load_dotenv
+import os
+from groq import Groq
 from classes import MessageRequest
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
+from starlette.responses import StreamingResponse
+from messages import messages
+from tools import tools
 
-app = FastAPI(title="luna-api")
+load_dotenv()
 
-# Definir os caminhos para os modelos
-trained_model_path = "./trained_model"
-pretrained_model_path = "./pretrained_model"
+app = FastAPI()
 
-
-# Função para carregar o modelo e o tokenizer
-def load_model_and_tokenizer():
-    print("\nline 16")
-    if os.path.exists(trained_model_path):
-        print("\nline 18")
-        model = AutoModelForCausalLM.from_pretrained(trained_model_path)
-        tokenizer = AutoTokenizer.from_pretrained(trained_model_path)
-    elif os.path.exists(pretrained_model_path):
-        print("\nline 22")
-        model = AutoModelForCausalLM.from_pretrained(pretrained_model_path)
-        tokenizer = AutoTokenizer.from_pretrained(pretrained_model_path)
-    else:
-        print("\nline 26")
-        model_id = "meta-llama/Meta-Llama-3-8B"
-        model = AutoModelForCausalLM.from_pretrained(
-            model_id,
-            torch_dtype=torch.float16,
-            low_cpu_mem_usage=True,
-        ).cpu()
-
-        from accelerate import disk_offload
-        disk_offload(model=model, offload_dir="offload")
-
-        tokenizer = AutoTokenizer.from_pretrained(model_id)
-
-    return model, tokenizer
+LUNA_DEV_KEY = os.getenv("LUNA_DEV_KEY")
+client = Groq(api_key=LUNA_DEV_KEY)
+MODEL = "llama3-8b-8192"
 
 
-model, tokenizer = load_model_and_tokenizer()
+def save_info():
+    print("\n\nsave info into db")
+    return json.dumps({"message": "Informação salva com sucesso"})
 
 
-@app.post("/send-message")
-async def chat_llm(request: MessageRequest):
+@app.post("/chat-luna")
+async def chatLuna(request: MessageRequest):
 
-    print("request.message", request.message)
+    message = request.message
+    print("message:", message)
 
-    inputs = tokenizer(request.message, return_tensors="pt")
-    outputs = model.generate(inputs["input_ids"], max_length=50, num_return_sequences=1)
-    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    messages.append({"role": "user", "content": message})
 
-    print("generated_text")
+    completion = client.chat.completions.create(
+        model=MODEL,
+        messages=messages,
+        tools=tools,
+        temperature=1,
+        max_tokens=1024,
+        stop=None,
+        tool_choice="auto",
+    )
 
-    return {"response": generated_text}
+    tool_calls = completion.choices[0].message.tool_calls
+
+    if tool_calls:
+        available_functions = {
+            "save_info": save_info,
+        }
+        for tool_call in tool_calls:
+            name = tool_call.function.name
+            arguments = json.loads(tool_call.function.arguments)
+            function = available_functions[name]
+
+            print("89:", arguments)
+            response = function()
+            messages.append(
+                {
+                    "content": response,
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "name": name,
+                }
+            )
+
+    second_completion = client.chat.completions.create(model=MODEL, messages=messages)
+    return second_completion.choices[0].message.content
 
 
 @app.get("/")
 async def helloWorld():
-    return {"message": "Hello World"}
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    return {"message": "Hello World!"}
