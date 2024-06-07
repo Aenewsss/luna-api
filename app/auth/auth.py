@@ -34,7 +34,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 
 
 @router.post("/create-user")
-async def createUser(user: UserCreate, db: Session = Depends(get_db)):
+async def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
     user.password = get_password_hash(user.password)
     
@@ -42,8 +42,6 @@ async def createUser(user: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-
-    print("\nnew_user", new_user)
 
     return [new_user]
 

@@ -17,10 +17,13 @@ class TokenData(BaseModel):
 
 
 class User(BaseModel):
-    id: str
+    id: int
     email: str
     phone: str
     name: str
+
+    class Config:
+        from_attributes=True
 
 
 class UserInDB(User):
@@ -32,3 +35,15 @@ class UserCreate(BaseModel):
     email: EmailStr
     phone: str
     password: str
+
+class InfoCreate(BaseModel):
+    user_id: int
+    title: str
+    content: str
+    
+class InfoResponse(BaseModel):
+    title:str
+    content:str
+
+    class Config:
+        orm_mode=True
