@@ -5,16 +5,19 @@ from datetime import datetime, timedelta
 from typing import Optional
 from dotenv import load_dotenv
 from passlib.context import CryptContext
-from app.classes.classes import Token, TokenData, UserInDB
+from app.classes.classes import Token, TokenData, UserCreate, UserInDB
+from app.database.database import get_db
 from app.environments import JWT_ACCESS_TOKEN_EXPIRE_TIME, JWT_ALGORITHM, JWT_SECRET_KEY
+from sqlalchemy.orm import Session
+from app.models.models import User
 
 load_dotenv()
 
-router = APIRouter(tags=['auth'])
+router = APIRouter(tags=["auth"])
 
 @router.post("/token", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(form_data.username, form_data.password)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = authenticate_user(form_data.username, form_data.password,db)
 
     if not user:
         raise HTTPException(
@@ -29,37 +32,43 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+@router.post("/create-user")
+async def createUser(user: UserCreate, db: Session = Depends(get_db)):
+
+    user.password = get_password_hash(user.password)
     
-fake_db = [
-    {
-        "id": "2",
-        "name": "Aenã",
-        "email": "example@example.com",
-        "phone": "6199999999",
-        "password": "$2b$12$PsntnPAarXJYJhKhkQpFHOTP3xQakXfrnbHGc71tMd2yuSUx/AE1O"
-    }
-]
+    new_user = User(**user.model_dump())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    print("\nnew_user", new_user)
+
+    return [new_user]
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 def get_password_hash(password):
     return pwd_context.hash(password)
+
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def get_user_by_email(email: str):
-    for user in fake_db:
-        if user["email"] == email:
-            return UserInDB(**user)
-    return None
+def get_user_by_email(email: str,db: Session):
+    user = db.query(User).filter(User.email == email).first()
+    if not user: 
+        return False
+    return user
 
 
-def authenticate_user(email: str, password: str):
-    user = get_user_by_email(email)
-    
+def authenticate_user(email: str, password: str,db: Session):
+    user = get_user_by_email(email,db)
+
     if not user:
         return False
     if not verify_password(password, user.password):
@@ -77,13 +86,14 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
     return encoded_jwt
 
-async def validate_token(token: str = Depends(oauth2_scheme)):
+
+async def validate_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
         email: str = payload.get("sub")
@@ -94,9 +104,9 @@ async def validate_token(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(email=email)
     except JWTError:
         raise credentials_exception
-        
-    user = get_user_by_email(email=token_data.email)
-    
+
+    user = get_user_by_email(email=token_data.email, db=db)
+
     if user is None:
         raise credentials_exception
     return user

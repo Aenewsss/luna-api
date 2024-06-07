@@ -1,8 +1,10 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
+
 
 class MessageRequest(BaseModel):
     message: str
+
 
 # Modelos Pydantic
 class Token(BaseModel):
@@ -22,4 +24,11 @@ class User(BaseModel):
 
 
 class UserInDB(User):
+    password: str
+
+
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    phone: str
     password: str

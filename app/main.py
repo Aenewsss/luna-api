@@ -1,13 +1,16 @@
 import json
+import os
+import sys
 from fastapi import Depends, FastAPI
 from groq import Groq
+from app.models import models
 from app.classes.classes import MessageRequest, User
 from app.environments import LLMODEL, LUNA_DEV_KEY
 from app.constants.messages import messages
 from app.constants.tools import tools
 from app.auth.auth import router as auth_router, validate_token
-import sys
-import os
+from app.database.database import engine
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 app = FastAPI(title='Luna API', root_path='/api')
@@ -15,6 +18,9 @@ app = FastAPI(title='Luna API', root_path='/api')
 app.include_router(auth_router, prefix='/auth')
 
 client = Groq(api_key=LUNA_DEV_KEY)
+
+# create tables if doesn't exist yet
+models.Base.metadata.create_all(bind=engine)
 
 def save_info():
     print("\n\nsave info into db line 20")
