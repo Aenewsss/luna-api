@@ -4,7 +4,7 @@ import sys
 from fastapi import Depends, FastAPI
 from groq import Groq
 from requests import Session
-from app.info.info import save_info
+from app.info.info import get_all_info, save_info
 from app.models import models
 from app.classes.classes import InfoCreate, MessageRequest, User
 from app.environments import LLMODEL, LUNA_DEV_KEY
@@ -13,6 +13,7 @@ from app.constants.tools import tools
 from app.constants.available_functions import available_functions
 from app.auth.auth import router as auth_router, validate_token
 from app.database.database import engine, get_db
+
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -65,6 +66,8 @@ async def chatLuna(
         for tool_call in tool_calls:
             name = tool_call.function.name
 
+            print("\nline 68", name)
+
             if name == "save_info":
                 return flow_save_info(
                     tool_call_id=tool_call.id,
@@ -72,14 +75,13 @@ async def chatLuna(
                     name=name,
                     user_id=user_id,
                     user_message=user_message,
-                    db=db
+                    db=db,
                 )
             elif name == "get_all_info":
-                return flow_get_all_info(
-                    tool_call_id=tool_call.id,
-                    name=name,
-                    user_id=user_id,
-                    db=db
+                return flow_get_all_info(name=name, user_id=user_id, db=db)
+            elif name == "remove_info":
+                return flow_remove_info(
+                    tool_call_id=tool_call.id, name=name, user_id=user_id, db=db
                 )
 
 
@@ -132,7 +134,9 @@ def chat_to_save_data(user_id: int, user_message: str, db: Session):
                 return second_completion.choices[0].message.content
 
 
-def flow_save_info(tool_call_id, arguments, name, user_id:int, user_message: str, db: Session):
+def flow_save_info(
+    tool_call_id, arguments, name, user_id: int, user_message: str, db: Session
+):
     if "title" not in arguments or "content" not in arguments:
         return chat_to_save_data(user_id, user_message, db)
     else:
@@ -140,22 +144,51 @@ def flow_save_info(tool_call_id, arguments, name, user_id:int, user_message: str
         content = arguments["content"]
         function = available_functions[name]
 
-        response = function(InfoCreate(user_id=user_id, title=title, content=content), db)
-        
-        return final_tool_message(response, tool_call_id,name)
+        response = function(
+            InfoCreate(user_id=user_id, title=title, content=content), db
+        )
 
-def flow_get_all_info(tool_call_id,name, user_id,db):
+        return final_tool_message(response, tool_call_id, name)
+
+
+def flow_get_all_info(name, user_id, db):
     function = available_functions[name]
     response = {
         "message": "Aqui está uma lista detalhada de todas suas informações salvas:",
-        "infos":function(user_id,db)
+        "infos": function(user_id, db),
     }
 
-    
     return response
 
-    
-def final_tool_message(content,tool_call_id,name):
+
+def flow_remove_info(tool_call_id, name, user_id, db):
+    infos = get_all_info(user_id, db)
+
+    info_str = ", ".join(info.model_dump_json() for info in infos)
+
+    messages.append(
+        {
+            "content": "Encontre nessa lista de jsons a informação que é mais parecida com o que o usuário pediu para remover:"
+            + info_str + ". Após encontrar, mostre a informação e pergunte se ele realmente quer remover",
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "name": name,
+        }
+    )
+
+    completion = client.chat.completions.create(model=LLMODEL, messages=messages)
+    print("\nline 170:", completion.choices[0].message.content)
+    return completion.choices[0].message.content
+    # function = available_functions[name]
+    # response = {
+    #     "message": "Aqui está a função que você deseja apagar:",
+    #     "infos": function(user_id, db),
+    # }
+
+    return response
+
+
+def final_tool_message(content, tool_call_id, name):
     messages.append(
         {
             "content": content,
@@ -165,10 +198,9 @@ def final_tool_message(content,tool_call_id,name):
         }
     )
 
-    completion = client.chat.completions.create(
-        model=LLMODEL, messages=messages
-    )
+    completion = client.chat.completions.create(model=LLMODEL, messages=messages)
     return completion.choices[0].message.content
+
 
 @app.get("/")
 async def helloWorld():

@@ -21,7 +21,7 @@ messages = [
     },
     {
         "role": "system",
-        "content": "Quando alguém pedir para você remover alguma informação, primeiro você vai verificar se tem como saber qual é a informação, como uma palavra que ligue a ela ou entre outras coisas, após isso, você vai responder com 'removeInfo'.",
+        "content": "Quando alguém pedir para você remover alguma informação,  você vai chamar a função remove_info de suas tools.",
     },
 ]
 

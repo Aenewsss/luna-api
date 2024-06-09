@@ -31,4 +31,20 @@ tools = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "remove_info",
+            "description": "Remover uma informação específica do usuário",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "message": "Mensagem padrão após salvar informação",
+                    }
+                },
+            },
+        },
+    },
 ]
