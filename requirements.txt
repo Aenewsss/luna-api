@@ -1,0 +1,5 @@
+fastapi==0.111.0
+groq==0.8.0
+python-jose==3.3.0
+python-dotenv==1.0.1
+SQLAlchemy==2.0.30
