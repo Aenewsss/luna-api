@@ -204,6 +204,7 @@ def final_tool_message(content, tool_call_id, name):
 
 @app.get("/")
 async def helloWorld():
+    print('\n\nLine 207 print\n\n')
     return {"message": "Hello World!"}
 
 
