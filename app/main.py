@@ -1,7 +1,8 @@
 import json
 import os
 import sys
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
+from fastapi.responses import JSONResponse, PlainTextResponse
 from groq import Groq
 from requests import Session
 from app.info.info import get_all_info, save_info
@@ -169,7 +170,8 @@ def flow_remove_info(tool_call_id, name, user_id, db):
     messages.append(
         {
             "content": "Encontre nessa lista de jsons a informação que é mais parecida com o que o usuário pediu para remover:"
-            + info_str + ". Após encontrar, mostre a informação e pergunte se ele realmente quer remover",
+            + info_str
+            + ". Após encontrar, mostre a informação e pergunte se ele realmente quer remover",
             "role": "tool",
             "tool_call_id": tool_call_id,
             "name": name,
@@ -203,11 +205,20 @@ def final_tool_message(content, tool_call_id, name):
 
 
 @app.get("/")
-async def helloWorld():
-    print('\n\nLine 207 print\n\n')
+async def hello_world():
+    print("\nline 207\n")
     return {"message": "Hello World!"}
 
-@app.post("/")
-async def wpp_webhook():
-    print('\n\nLine 212 print webhook\n\n')
-    return {"message": "Hello Whatsapp!"}
+@app.get("/webhook")
+async def wpp_webhook(request: Request):
+    mode = request.query_params.get("hub.mode")
+    token = request.query_params.get("hub.verify_token")
+    challenge = request.query_params.get("hub.challenge")
+
+    if mode and token:
+        if mode == "subscribe" and token == "my_custom_verify_token":
+            return PlainTextResponse(challenge)
+        else:
+            return JSONResponse(content={"error": "Forbidden"}, status_code=403)
+
+    return {"message": "Webhook called"}
