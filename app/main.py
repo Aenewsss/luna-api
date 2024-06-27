@@ -215,6 +215,8 @@ async def wpp_webhook(request: Request):
     token = request.query_params.get("hub.verify_token")
     challenge = request.query_params.get("hub.challenge")
 
+    print('\nmode, token, challenge', mode, token, challenge)
+    
     if mode and token:
         if mode == "subscribe" and token == "my_custom_verify_token":
             return PlainTextResponse(challenge)
