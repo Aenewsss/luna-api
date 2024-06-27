@@ -207,8 +207,7 @@ async def helloWorld():
     print('\n\nLine 207 print\n\n')
     return {"message": "Hello World!"}
 
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8888)
+@app.post("/")
+async def wpp_webhook():
+    print('\n\nLine 212 print webhook\n\n')
+    return {"message": "Hello Whatsapp!"}
