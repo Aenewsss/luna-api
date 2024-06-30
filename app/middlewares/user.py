@@ -28,6 +28,8 @@ class UserMiddleware(BaseHTTPMiddleware):
                     request.state.user_id = user.id
                     request.state.user_name = user.name
 
+                request._body = body
+                
                 response = await call_next(request)
                 print("response:",response)
 
