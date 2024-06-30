@@ -10,7 +10,7 @@ from app.models.models import User
 
 class UserMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if request.url.path == '/chat-luna':
+        if request.url.path == "/chat-luna":
             try:
                 body = await request.body()
                 body = json.loads(body)
@@ -21,15 +21,19 @@ class UserMiddleware(BaseHTTPMiddleware):
                     db: Session = next(get_db())
 
                     user = db.query(User).filter(User.phone == user_phone).first()
-                    print('line 24', user)
-                    print('line 25', user.id)
-                    print('line 26', user.name)
+                    print("line 24", user)
+                    print("line 25", user.id)
+                    print("line 26", user.name)
 
                     if not user:
                         raise HTTPException(status_code=404, detail="User not found")
+
+                    print("line 31")
                     request.state.user_id = user.id
                     request.state.user_name = user.name
+                    print("line 34")
 
+                print("line 36")
                 response = await call_next(request)
                 return response
             except HTTPException as e:
