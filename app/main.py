@@ -52,7 +52,7 @@ async def wpp_webhook(request: Request):
 
 @app.post("/chat-luna")
 async def chatLuna(
-    request: MessageRequest,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     print('here 58',request.message)
