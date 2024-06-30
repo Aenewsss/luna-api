@@ -8,12 +8,8 @@ from app.database.database import get_db
 from app.models.models import User
 
 class UserMiddleware(BaseHTTPMiddleware):
-    called_times = 0
-
     async def dispatch(self, request: Request, call_next):
-        if request.url.path == "/chat-luna" and UserMiddleware.called_times < 1:
-            UserMiddleware.called_times += 1
-
+        if request.url.path == "/chat-luna":
             try:
                 body = await request.body()
                 body = json.loads(body)
@@ -51,7 +47,5 @@ class UserMiddleware(BaseHTTPMiddleware):
                     content={"detail": str(e)},
                 )
 
-        if UserMiddleware.called_times == 2:
-            UserMiddleware.called_times = 0
         response = await call_next(request)
         return response
