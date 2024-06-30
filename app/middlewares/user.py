@@ -7,10 +7,13 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.database.database import get_db
 from app.models.models import User
 
-called_times = 0
 class UserMiddleware(BaseHTTPMiddleware):
+    called_times = 0
+
     async def dispatch(self, request: Request, call_next):
-        if request.url.path == "/chat-luna" and called_times < 1:
+        if request.url.path == "/chat-luna" and UserMiddleware.called_times < 1:
+            UserMiddleware.called_times += 1
+
             try:
                 body = await request.body()
                 body = json.loads(body)
@@ -32,7 +35,6 @@ class UserMiddleware(BaseHTTPMiddleware):
                 response = await call_next(request)
                 print("response:",response)
 
-                called_times += 1
                 return response
             except HTTPException as e:
                 return JSONResponse(
@@ -50,7 +52,7 @@ class UserMiddleware(BaseHTTPMiddleware):
                     content={"detail": str(e)},
                 )
 
-        if called_times == 2:
-            called_times = 0
+        if UserMiddleware.called_times == 2:
+            UserMiddleware.called_times = 0
         response = await call_next(request)
         return response
