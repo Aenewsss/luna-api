@@ -21,7 +21,7 @@ class UserMiddleware(BaseHTTPMiddleware):
                 print('line 21', user_phone)
 
                 if user_phone:
-                    db: Session = next(get_db)
+                    db: Session = next(get_db())
                     print('line 25')
 
                     user = db.query(User).filter(User.phone == user_phone).first()
