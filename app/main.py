@@ -55,15 +55,14 @@ async def chatLuna(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    body = await request.json()
-    print('body 2', body)
-    
-    print('here 58',request.message)
     user_id = request.state.user_id
     user_name = request.state.user_name
-    print('here 61',user_id, user_name, request.state)
+    print('here 60',user_id, user_name)
 
-    user_message = request.message
+    body = await request.json()
+    body = json.loads(body)
+                
+    user_message = body.get("message")
 
     messages.append(
         {

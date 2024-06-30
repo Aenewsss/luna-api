@@ -13,7 +13,7 @@ class UserMiddleware(BaseHTTPMiddleware):
             try:
                 body = await request.body()
                 body = json.loads(body)
-                print('body:', body)
+                
                 user_phone = body.get("user_phone")
 
                 if user_phone:
