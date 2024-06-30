@@ -12,20 +12,18 @@ class UserMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.url.path == '/chat-luna':
             try:
-                print('line 15')
                 body = await request.body()
                 body = json.loads(body)
-                print('line 18', body)
 
                 user_phone = body.get("user_phone")
-                print('line 21', user_phone)
 
                 if user_phone:
                     db: Session = next(get_db())
-                    print('line 25')
 
                     user = db.query(User).filter(User.phone == user_phone).first()
-                    print('line 28', user)
+                    print('line 24', user)
+                    print('line 25', user.id)
+                    print('line 26', user.name)
 
                     if not user:
                         raise HTTPException(status_code=404, detail="User not found")
