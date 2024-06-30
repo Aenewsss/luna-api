@@ -8,7 +8,6 @@ class StateRequest(BaseModel):
 class MessageRequest(BaseModel):
     message: str
     user_phone: str
-    state: StateRequest
 
 # Modelos Pydantic
 class Token(BaseModel):
