@@ -1,11 +1,14 @@
 from typing import Optional
 from pydantic import BaseModel, EmailStr
 
+class StateRequest(BaseModel):
+    user_id: int
+    user_name: str
 
 class MessageRequest(BaseModel):
     message: str
     user_phone: str
-
+    state: StateRequest
 
 # Modelos Pydantic
 class Token(BaseModel):
