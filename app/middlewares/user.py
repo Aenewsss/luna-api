@@ -21,25 +21,26 @@ class UserMiddleware(BaseHTTPMiddleware):
                     db: Session = next(get_db())
 
                     user = db.query(User).filter(User.phone == user_phone).first()
-                    print("line 24", user)
-                    print("line 25", user.id)
-                    print("line 26", user.name)
 
                     if not user:
                         raise HTTPException(status_code=404, detail="User not found")
 
-                    print("line 31")
                     request.state.user_id = user.id
                     request.state.user_name = user.name
-                    print("line 34")
 
-                print("line 36")
                 response = await call_next(request)
+                print("response:",response)
+
                 return response
             except HTTPException as e:
                 return JSONResponse(
                     status_code=e.status_code,
                     content={"detail": e.detail},
+                )
+            except json.JSONDecodeError as e:
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": "Invalid JSON in request body"},
                 )
             except Exception as e:
                 return JSONResponse(
