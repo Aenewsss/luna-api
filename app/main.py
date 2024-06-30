@@ -59,7 +59,7 @@ async def chatLuna(
     user_name = request.state.user_name
     print('here 60',user_id, user_name)
 
-    body = await request.json()
+    body = await request.body()
     body = json.loads(body)
     print('body 64', body)
     user_message = body.get("message")
