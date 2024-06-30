@@ -14,7 +14,7 @@ from app.constants.tools import tools
 from app.constants.available_functions import available_functions
 from app.auth.auth import router as auth_router, validate_token
 from app.database.database import engine, get_db
-
+from app.middlewares.user import UserMiddleware
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -27,16 +27,36 @@ client = Groq(api_key=LUNA_DEV_KEY)
 # create tables if doesn't exist yet
 models.Base.metadata.create_all(bind=engine)
 
+app.add_middleware(UserMiddleware)
+
+@app.get("/")
+async def hello_world():
+    print("\nline 207\n")
+    return {"message": "Hello World!"}
+
+@app.get("/webhook")
+async def wpp_webhook(request: Request):
+    mode = request.query_params.get("hub.mode")
+    token = request.query_params.get("hub.verify_token")
+    challenge = request.query_params.get("hub.challenge")
+
+    print('\nmode, token, challenge', mode, token, challenge)
+    
+    if mode and token:
+        if mode == "subscribe" and token == "my_custom_verify_token":
+            return PlainTextResponse(challenge)
+        else:
+            return JSONResponse(content={"error": "Forbidden"}, status_code=403)
+
+    return {"message": "Webhook called"}
 
 @app.post("/chat-luna")
 async def chatLuna(
     request: MessageRequest,
-    current_user: User = Depends(validate_token),
     db: Session = Depends(get_db),
 ):
-
-    user_id = current_user.id
-    user_name = current_user.name
+    user_id = request.state.id
+    user_name = request.state.name
 
     user_message = request.message
 
@@ -202,25 +222,3 @@ def final_tool_message(content, tool_call_id, name):
 
     completion = client.chat.completions.create(model=LLMODEL, messages=messages)
     return completion.choices[0].message.content
-
-
-@app.get("/")
-async def hello_world():
-    print("\nline 207\n")
-    return {"message": "Hello World!"}
-
-@app.get("/webhook")
-async def wpp_webhook(request: Request):
-    mode = request.query_params.get("hub.mode")
-    token = request.query_params.get("hub.verify_token")
-    challenge = request.query_params.get("hub.challenge")
-
-    print('\nmode, token, challenge', mode, token, challenge)
-    
-    if mode and token:
-        if mode == "subscribe" and token == "my_custom_verify_token":
-            return PlainTextResponse(challenge)
-        else:
-            return JSONResponse(content={"error": "Forbidden"}, status_code=403)
-
-    return {"message": "Webhook called"}
