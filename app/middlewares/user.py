@@ -18,11 +18,14 @@ class UserMiddleware(BaseHTTPMiddleware):
                 print('line 18', body)
 
                 user_phone = body.get("user_phone")
+                print('line 21', user_phone)
 
                 if user_phone:
                     db: Session = next(get_db)
+                    print('line 25')
+
                     user = db.query(User).filter(User.phone == user_phone).first()
-                    print('line 25', user)
+                    print('line 28', user)
 
                     if not user:
                         raise HTTPException(status_code=404, detail="User not found")
