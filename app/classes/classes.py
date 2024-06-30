@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr
 
 class MessageRequest(BaseModel):
     message: str
+    user_phone: str
 
 
 # Modelos Pydantic

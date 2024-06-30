@@ -17,7 +17,7 @@ class UserMiddleware(BaseHTTPMiddleware):
             try:
                 body = await request.body()
                 body = json.loads(body)
-
+                print('body:', body)
                 user_phone = body.get("user_phone")
 
                 if user_phone:
@@ -33,7 +33,6 @@ class UserMiddleware(BaseHTTPMiddleware):
 
                 request._body = body
                 response = await call_next(request)
-                print("response:",response)
 
                 return response
             except HTTPException as e:
