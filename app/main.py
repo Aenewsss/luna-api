@@ -61,8 +61,9 @@ async def chatLuna(
 
     body = await request.json()
     body = json.loads(body)
-                
+    print('body 64', body)
     user_message = body.get("message")
+    print('user_message ', user_message)
 
     messages.append(
         {
