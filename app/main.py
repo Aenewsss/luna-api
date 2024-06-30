@@ -55,9 +55,9 @@ async def chatLuna(
     request: MessageRequest,
     db: Session = Depends(get_db),
 ):
-    print('here 58')
-    user_id = request.state.id
-    user_name = request.state.name
+    print('here 58',request.message)
+    user_id = request.state.user_id
+    user_name = request.state.user_name
     print('here 61',user_id, user_name, request.state)
 
     user_message = request.message
