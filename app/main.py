@@ -8,7 +8,7 @@ from requests import Session
 from app.info.info import get_all_info, save_info
 from app.models import models
 from app.classes.classes import InfoCreate, MessageRequest, User
-from app.environments import LLMODEL, LUNA_DEV_KEY
+from app.environments import LLMODEL, LUNA_DEV_KEY, WEBHOOK_WPP_VERIFY_TOKEN
 from app.constants.messages import messages
 from app.constants.tools import tools
 from app.constants.available_functions import available_functions
@@ -29,26 +29,32 @@ models.Base.metadata.create_all(bind=engine)
 
 app.add_middleware(UserMiddleware)
 
+
 @app.get("/")
 async def hello_world():
     print("\nline 207\n")
     return {"message": "Hello World!"}
 
-@app.get("/webhook")
+
+@app.get("/wpp-webhook")
 async def wpp_webhook(request: Request):
     mode = request.query_params.get("hub.mode")
     token = request.query_params.get("hub.verify_token")
     challenge = request.query_params.get("hub.challenge")
 
-    print('\nmode, token, challenge', mode, token, challenge)
-    
-    if mode and token:
-        if mode == "subscribe" and token == "my_custom_verify_token":
-            return PlainTextResponse(challenge)
-        else:
-            return JSONResponse(content={"error": "Forbidden"}, status_code=403)
+    print(
+        "\nmode, token, challenge, verify_token",
+        mode,
+        token,
+        challenge,
+        WEBHOOK_WPP_VERIFY_TOKEN,
+    )
 
-    return {"message": "Webhook called"}
+    if mode == "subscribe" and token == WEBHOOK_WPP_VERIFY_TOKEN:
+        return PlainTextResponse(challenge)
+    else:
+        return JSONResponse(content={"error": "Forbidden"}, status_code=403)
+
 
 @app.post("/chat-luna")
 async def chatLuna(
@@ -57,13 +63,13 @@ async def chatLuna(
 ):
     user_id = request.state.user_id
     user_name = request.state.user_name
-    print('here 60',user_id, user_name)
+    print("here 60", user_id, user_name)
 
     body = await request.body()
     body = json.loads(body)
-    print('body 64', body)
+    print("body 64", body)
     user_message = body.get("message")
-    print('user_message ', user_message)
+    print("user_message ", user_message)
 
     messages.append(
         {
