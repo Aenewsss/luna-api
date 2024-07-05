@@ -75,26 +75,26 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
         data = await request.json()
 
         if not data.get("entry"):
-            raise HTTPException(status_code=400, detail="Invalid data")
+            raise HTTPException(status_code=200, detail="Invalid data")
 
         entry = data["entry"][0]
         if not entry.get("changes"):
-            raise HTTPException(status_code=400, detail="Invalid data")
+            raise HTTPException(status_code=200, detail="Invalid data")
 
         changes = entry["changes"][0]
         value = changes.get("value")
         if not value:
-            raise HTTPException(status_code=400, detail="Invalid data")
+            raise HTTPException(status_code=200, detail="Invalid data")
 
         messages = value.get("messages")
         if not messages:
-            raise HTTPException(status_code=400, detail="Invalid data")
+            raise HTTPException(status_code=200, detail="Invalid data")
 
         message = messages[0]
         if message.get("type") == "text":
             business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
             if not business_phone_number_id:
-                raise HTTPException(status_code=400, detail="Invalid data")
+                raise HTTPException(status_code=200, detail="Invalid data")
 
             user_phone = message.get("from")
             user_message = message.get("text", {}).get("body")
@@ -138,10 +138,10 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
     except HTTPException as e:
         logger.error(f"HTTP error 141: {e}", exc_info=True)
-        raise e
+        return Response(status_code=200)
     except Exception as e:
         logger.error(f"Unhandled error 143: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        return Response(status_code=200)
 
 
 async def chatLuna(db, user_message, user_id, user_name):
