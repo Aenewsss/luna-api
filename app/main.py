@@ -92,6 +92,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
         message = messages[0]
         if message.get("type") == "text":
+            print('line 95:',value)
             business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
             if not business_phone_number_id:
                 raise HTTPException(status_code=400, detail="Invalid data")
@@ -99,12 +100,8 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             user_phone = message.get("from")
             user_message = message.get("text", {}).get("body")
 
-            print("line 89", user_phone, user_message)
-        
             if user_phone:
                 user = db.query(UserModel).filter(UserModel.phone == user_phone).first()
-
-                print("line 93", user)
 
                 if not user:
                     raise HTTPException(status_code=404, detail="User not found")
@@ -113,6 +110,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 user_name = user.name
 
             response_data = chatLuna(db, user_message, user_id, user_name)
+            print('line 117, business_phone_number_id:',business_phone_number_id)
 
             # Send a WhatsApp message
             requests.post(
