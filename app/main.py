@@ -2,10 +2,11 @@ import json
 import logging
 import os
 import sys
-from fastapi import Depends, FastAPI, HTTPException, Request, requests
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 from groq import Groq
 from requests import Session
+import requests
 from app.info.info import get_all_info, save_info
 from app.models import models
 from app.classes.classes import InfoCreate, MessageRequest, User
