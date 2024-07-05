@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import sys
 from fastapi import Depends, FastAPI, HTTPException, Request, requests
@@ -29,6 +30,16 @@ models.Base.metadata.create_all(bind=engine)
 
 # app.add_middleware(UserMiddleware)
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+@app.exception_handler(Exception)
+async def custom_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+    )
 
 @app.get("/")
 async def hello_world():
@@ -127,8 +138,10 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
         return {"status": "success"}
 
     except HTTPException as e:
+        logger.error(f"HTTP error 141: {e}", exc_info=True)
         raise e
     except Exception as e:
+        logger.error(f"Unhandled error 143: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
