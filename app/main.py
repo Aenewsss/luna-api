@@ -16,6 +16,7 @@ from app.constants.available_functions import available_functions
 from app.auth.auth import router as auth_router, validate_token
 from app.database.database import engine, get_db
 from app.middlewares.user import UserMiddleware
+from app.models.models import User as UserModel
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -100,7 +101,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             print("line 89", user_phone, user_message)
         
             if user_phone:
-                user = db.query(User).filter(User.phone == user_phone).first()
+                user = db.query(UserModel).filter(User.phone == user_phone).first()
 
                 print("line 93", user)
 
