@@ -101,7 +101,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             print("line 89", user_phone, user_message)
         
             if user_phone:
-                user = db.query(UserModel).filter(User.phone == user_phone).first()
+                user = db.query(UserModel).filter(UserModel.phone == user_phone).first()
 
                 print("line 93", user)
 
