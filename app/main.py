@@ -27,7 +27,7 @@ client = Groq(api_key=LUNA_DEV_KEY)
 # create tables if doesn't exist yet
 models.Base.metadata.create_all(bind=engine)
 
-app.add_middleware(UserMiddleware)
+# app.add_middleware(UserMiddleware)
 
 
 @app.get("/")
@@ -86,8 +86,18 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             user_phone = message.get("from")
             user_message = message.get("text", {}).get("body")
 
-            user_id = request.state.user_id
-            user_name = request.state.user_name
+            print("line 89", user_phone, user_message)
+        
+            if user_phone:
+                db: Session = next(get_db())
+
+                user = db.query(User).filter(User.phone == user_phone).first()
+
+                if not user:
+                    raise HTTPException(status_code=404, detail="User not found")
+
+                user_id = user.id
+                user_name = user.name
 
             response_data = chatLuna(db, user_message, user_id, user_name)
 
