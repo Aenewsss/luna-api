@@ -11,7 +11,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def get_db():
+    print('here 14')
     db = SessionLocal()
+    print('here 16')
+
     try:
         yield db
     finally:
