@@ -89,9 +89,9 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             print("line 89", user_phone, user_message)
         
             if user_phone:
-                db: Session = next(get_db())
-
                 user = db.query(User).filter(User.phone == user_phone).first()
+
+                print("line 93", user)
 
                 if not user:
                     raise HTTPException(status_code=404, detail="User not found")
