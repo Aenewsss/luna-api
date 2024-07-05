@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import sys
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, PlainTextResponse
 from groq import Groq
 from requests import Session
@@ -92,7 +92,6 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
         message = messages[0]
         if message.get("type") == "text":
-            print('line 95:',value)
             business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
             if not business_phone_number_id:
                 raise HTTPException(status_code=400, detail="Invalid data")
@@ -110,7 +109,6 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 user_name = user.name
 
             response_data = await chatLuna(db, user_message, user_id, user_name)
-            print('line 117, business_phone_number_id:',business_phone_number_id)
 
             # Send a WhatsApp message
             requests.post(
@@ -135,7 +133,8 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 },
             )
 
-        return {"status": "success"}
+        return Response(status_code=200)
+
 
     except HTTPException as e:
         logger.error(f"HTTP error 141: {e}", exc_info=True)
