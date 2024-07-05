@@ -109,7 +109,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 user_id = user.id
                 user_name = user.name
 
-            response_data = chatLuna(db, user_message, user_id, user_name)
+            response_data = await chatLuna(db, user_message, user_id, user_name)
             print('line 117, business_phone_number_id:',business_phone_number_id)
 
             # Send a WhatsApp message
@@ -168,6 +168,7 @@ async def chatLuna(db, user_message, user_id, user_name):
     tool_calls = completion.choices[0].message.tool_calls
 
     if tool_calls == None:
+        print('message:',completion.choices[0].message.content)
         return completion.choices[0].message.content
     else:
         for tool_call in tool_calls:
