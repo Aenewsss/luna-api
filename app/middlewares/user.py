@@ -9,7 +9,8 @@ from app.models.models import User
 
 class UserMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if request.url.path == "/chat-luna":
+        print('line 12', request.url.path, request.method)
+        if request.url.path == "/wpp-webhook" and request.method == "POST":
             try:
                 body = await request.body()
                 body = json.loads(body)
@@ -26,12 +27,6 @@ class UserMiddleware(BaseHTTPMiddleware):
 
                     request.state.user_id = user.id
                     request.state.user_name = user.name
-
-                # request._body = body
-
-                # print('request.state.user_id:',request.state.user_id)
-                # print('request.state.user_name:',request.state.user_name)
-                # print('request._body:',request._body)
                 
                 response = await call_next(request)
 
