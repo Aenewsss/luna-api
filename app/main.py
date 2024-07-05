@@ -1,14 +1,14 @@
 import json
 import os
 import sys
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, requests
 from fastapi.responses import JSONResponse, PlainTextResponse
 from groq import Groq
 from requests import Session
 from app.info.info import get_all_info, save_info
 from app.models import models
 from app.classes.classes import InfoCreate, MessageRequest, User
-from app.environments import LLMODEL, LUNA_DEV_KEY, WEBHOOK_WPP_VERIFY_TOKEN
+from app.environments import GRAPH_API_TOKEN, LLMODEL, LUNA_DEV_KEY, WEBHOOK_WPP_VERIFY_TOKEN
 from app.constants.messages import messages
 from app.constants.tools import tools
 from app.constants.available_functions import available_functions
@@ -56,21 +56,73 @@ async def wpp_webhook(request: Request):
         return JSONResponse(content={"error": "Forbidden"}, status_code=403)
 
 
-@app.post("/chat-luna")
-async def chatLuna(
-    request: Request,
-    db: Session = Depends(get_db),
-):
-    user_id = request.state.user_id
-    user_name = request.state.user_name
-    print("here 60", user_id, user_name)
+@app.post("/wpp-webhook")
+async def chat_wpp(request: Request, db: Session = Depends(get_db)):
+    try:
+        data = await request.json()
 
-    body = await request.body()
-    body = json.loads(body)
-    print("body 64", body)
-    user_message = body.get("message")
-    print("user_message ", user_message)
+        if not data.get("entry"):
+            raise HTTPException(status_code=400, detail="Invalid data")
 
+        entry = data["entry"][0]
+        if not entry.get("changes"):
+            raise HTTPException(status_code=400, detail="Invalid data")
+
+        changes = entry["changes"][0]
+        value = changes.get("value")
+        if not value:
+            raise HTTPException(status_code=400, detail="Invalid data")
+
+        messages = value.get("messages")
+        if not messages:
+            raise HTTPException(status_code=400, detail="Invalid data")
+
+        message = messages[0]
+        if message.get("type") == "text":
+            business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
+            if not business_phone_number_id:
+                raise HTTPException(status_code=400, detail="Invalid data")
+
+            user_phone = message.get("from")
+            user_message = message.get("text", {}).get("body")
+
+            user_id = request.state.user_id
+            user_name = request.state.user_name
+
+            response_data = chatLuna(db, user_message, user_id, user_name)
+
+            # Send a WhatsApp message
+            requests.post(
+                f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                json={
+                    "messaging_product": "whatsapp",
+                    "to": user_phone,
+                    "text": {"body": response_data},
+                    # "context": {"message_id": message["id"]},  # Uncomment if you want to reply user message
+                },
+            )
+
+            # Mark the message as read
+            requests.post(
+                f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                json={
+                    "messaging_product": "whatsapp",
+                    "status": "read",
+                    "message_id": message["id"],
+                },
+            )
+
+        return {"status": "success"}
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def chatLuna(db, user_message, user_id, user_name):
     messages.append(
         {
             "role": "system",
