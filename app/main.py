@@ -260,7 +260,7 @@ def flow_save_info(
 
 def flow_get_all_info(name, user_id, db):
     function = available_functions[name]
-    response = "Aqui está uma lista detalhada de todas suas informações salvas:" + map(str, function(user_id, db))
+    response = "Aqui está uma lista detalhada de todas suas informações salvas:" + ''.join(map(str, function(user_id, db)))
 
     return response
 
