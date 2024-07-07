@@ -260,10 +260,7 @@ def flow_save_info(
 
 def flow_get_all_info(name, user_id, db):
     function = available_functions[name]
-    response = {
-        "message": "Aqui está uma lista detalhada de todas suas informações salvas:",
-        "infos": function(user_id, db),
-    }
+    response = "Aqui está uma lista detalhada de todas suas informações salvas:" + function(user_id, db)
 
     return response
 
