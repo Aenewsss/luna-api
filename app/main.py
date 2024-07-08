@@ -10,7 +10,12 @@ import requests
 from app.info.info import get_all_info, save_info
 from app.models import models
 from app.classes.classes import InfoCreate, MessageRequest, User
-from app.environments import GRAPH_API_TOKEN, LLMODEL, LUNA_DEV_KEY, WEBHOOK_WPP_VERIFY_TOKEN
+from app.environments import (
+    GRAPH_API_TOKEN,
+    LLMODEL,
+    LUNA_DEV_KEY,
+    WEBHOOK_WPP_VERIFY_TOKEN,
+)
 from app.constants.messages import messages
 from app.constants.tools import tools
 from app.constants.available_functions import available_functions
@@ -35,6 +40,7 @@ models.Base.metadata.create_all(bind=engine)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 @app.exception_handler(Exception)
 async def custom_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled error: {exc}", exc_info=True)
@@ -42,6 +48,7 @@ async def custom_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": str(exc)},
     )
+
 
 @app.get("/")
 async def hello_world():
@@ -110,17 +117,28 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
             response_data = await chatLuna(db, user_message, user_id, user_name)
 
-            # Send a WhatsApp message
-            requests.post(
-                f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
-                headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
-                json={
-                    "messaging_product": "whatsapp",
-                    "to": user_phone,
-                    "text": {"body": response_data},
-                    # "context": {"message_id": message["id"]},  # Uncomment if you want to reply user message
-                },
-            )
+            if response_data["template"]:
+                # Send a WhatsApp message
+                response_data["template"]["to"] = user_phone
+
+                print('line 124 response_data:',response_data["template"])
+                requests.post(
+                    f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                    headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                    json=response_data["template"],
+                )
+            else:
+                # Send a WhatsApp message
+                requests.post(
+                    f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                    headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                    json={
+                        "messaging_product": "whatsapp",
+                        "to": user_phone,
+                        "text": {"body": response_data["text"]},
+                        # "context": {"message_id": message["id"]},  # Uncomment if you want to reply user message
+                    },
+                )
 
             # Mark the message as read
             requests.post(
@@ -134,7 +152,6 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             )
 
         return Response(status_code=200)
-
 
     except HTTPException as e:
         logger.error(f"HTTP error 141: {e}", exc_info=True)
@@ -167,8 +184,8 @@ async def chatLuna(db, user_message, user_id, user_name):
     tool_calls = completion.choices[0].message.tool_calls
 
     if tool_calls == None:
-        print('message:',completion.choices[0].message.content)
-        return completion.choices[0].message.content
+        print("message:", completion.choices[0].message.content)
+        return {"text": completion.choices[0].message.content}
     else:
         for tool_call in tool_calls:
             name = tool_call.function.name
@@ -260,9 +277,12 @@ def flow_save_info(
 
 def flow_get_all_info(name, user_id, db):
     function = available_functions[name]
-    response = "Aqui está uma lista detalhada de todas suas informações salvas:" + ''.join(map(str, function(user_id, db)))
+    response = (
+        "Aqui está uma lista detalhada de todas suas informações salvas:"
+        + "".join(map(str, function(user_id, db)))
+    )
 
-    return response
+    return {"text": response}
 
 
 def flow_remove_info(tool_call_id, name, user_id, db):
@@ -283,7 +303,20 @@ def flow_remove_info(tool_call_id, name, user_id, db):
 
     completion = client.chat.completions.create(model=LLMODEL, messages=messages)
     print("\nline 170:", completion.choices[0].message.content)
-    return completion.choices[0].message.content
+
+    template_message = {
+        "messaging_product": "whatsapp",
+        # "to": user_phone,
+        "type": "template",
+        "template": {
+            "name": "remove_info",
+            "language": {
+                "code": "pt_BR"
+            }
+        }
+    }
+
+    return {"text": completion.choices[0].message.content, "template": template_message}
     # function = available_functions[name]
     # response = {
     #     "message": "Aqui está a função que você deseja apagar:",
@@ -304,4 +337,4 @@ def final_tool_message(content, tool_call_id, name):
     )
 
     completion = client.chat.completions.create(model=LLMODEL, messages=messages)
-    return completion.choices[0].message.content
+    return {"text": completion.choices[0].message.content}
