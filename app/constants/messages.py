@@ -23,6 +23,10 @@ messages = [
         "role": "system",
         "content": "Quando alguém pedir para você remover alguma informação,  você vai chamar a função remove_info de suas tools.",
     },
+    {
+        "role": "system",
+        "content": "Quando alguém te agradecer por qualquer motivo, retribua o agradecimento e diga que está aqui para ajudar.",
+    },
 ]
 
 
