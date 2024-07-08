@@ -306,7 +306,6 @@ def flow_remove_info(tool_call_id, name, user_id, db):
     )
 
     completion = client.chat.completions.create(model=LLMODEL, messages=messages)
-    print("\nline 170:", completion.choices[0].message.content)
 
     template_message = {
         "messaging_product": "whatsapp",
@@ -316,7 +315,31 @@ def flow_remove_info(tool_call_id, name, user_id, db):
             "name": "remove_info",
             "language": {
                 "code": "pt_BR"
+            },
+             "components": [
+            {
+                "type": "button",
+                "sub_type": "quick_reply",
+                "index": "0",
+                "parameters": [
+                    {
+                        "type": "payload",
+                        "payload": "keep_info"
+                    }
+                ]
+            },
+            {
+                "type": "button",
+                "sub_type": "quick_reply",
+                "index": "1",
+                "parameters": [
+                    {
+                        "type": "payload",
+                        "payload": f"remove_info:{2}"
+                    }
+                ]
             }
+        ]
         }
     }
 
