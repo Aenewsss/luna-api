@@ -117,6 +117,8 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
             response_data = await chatLuna(db, user_message, user_id, user_name)
 
+            print('line 120 response_data',response_data)
+
             if response_data["template"]:
                 # Send a WhatsApp message
                 response_data["template"]["to"] = user_phone
