@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from groq import Groq
 from requests import Session
 import requests
-from app.info.info import get_all_info, save_info
+from app.info.info import get_all_info, remove_info, save_info
 from app.models import models
 from app.classes.classes import InfoCreate, MessageRequest, User
 from app.environments import (
@@ -99,8 +99,6 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
         message = messages[0]
 
-        print("line 102 data:", data)
-        
         if message.get("type") == "text":
             business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
             if not business_phone_number_id:
@@ -143,6 +141,49 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
                     json=response_data["template"],
                 )
+
+            # Mark the message as read
+            requests.post(
+                f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                json={
+                    "messaging_product": "whatsapp",
+                    "status": "read",
+                    "message_id": message["id"],
+                },
+            )
+        elif message.get("type") == "button":
+            user_phone = message.get("from")
+
+            if user_phone:
+                user = db.query(UserModel).filter(UserModel.phone == user_phone).first()
+
+                if not user:
+                    raise HTTPException(status_code=404, detail="User not found")
+
+                user_id = user.id
+
+            button_payload = message.get("button", {}).get("payload")
+            button_text = message.get("button", {}).get("text")
+
+            if button_text == "Sim":
+                length = len(button_payload)
+                id = button_payload[length - 1:length + 1]
+                response_text = remove_info(user_id, id)
+            elif button_text == "Não":
+                response_text = "Remoção da informação cancelada."
+
+            # Send a response based on the button clicked
+            requests.post(
+                f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                json={
+                    "messaging_product": "whatsapp",
+                    "to": user_phone,
+                    "text": {"body": response_text},
+                    "context": {"message_id": message["id"]},  # Uncomment if you want to reply user message
+                },
+            )
 
             # Mark the message as read
             requests.post(

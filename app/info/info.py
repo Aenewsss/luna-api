@@ -1,5 +1,5 @@
 import json
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from requests import Session
 
 from app.classes.classes import InfoCreate, InfoResponse
@@ -26,9 +26,13 @@ def get_all_info(user_id: int, db: Session):
 
 
 def remove_info(user_id: int, db: Session):
-    infos = db.query(Info).filter(Info.user_id == user_id).all()
+    info = db.query(Info).filter(Info.user_id == user_id).first()
 
-    if not infos:
-        return []
+    if not info:
+        return {"text": "Informação não encontrada"}
 
-    return [InfoResponse.model_validate(info, from_attributes=True) for info in infos]
+    # Delete the Info entry
+    db.delete(info)
+    db.commit()
+
+    return {"text": "Informação removida com sucesso"}
