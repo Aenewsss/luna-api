@@ -98,6 +98,9 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             raise HTTPException(status_code=200, detail="Invalid data")
 
         message = messages[0]
+
+        print("line 102 message:", message)
+        
         if message.get("type") == "text":
             business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
             if not business_phone_number_id:
@@ -118,6 +121,17 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             response_data = await chatLuna(db, user_message, user_id, user_name)
 
             print('line 120 response_data',response_data)
+            # Send a WhatsApp message
+            requests.post(
+                f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                json={
+                    "messaging_product": "whatsapp",
+                    "to": user_phone,
+                    "text": {"body": response_data["text"]},
+                    # "context": {"message_id": message["id"]},  # Uncomment if you want to reply user message
+                },
+            )
 
             if response_data["template"]:
                 # Send a WhatsApp message
@@ -128,18 +142,6 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
                     headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
                     json=response_data["template"],
-                )
-            else:
-                # Send a WhatsApp message
-                requests.post(
-                    f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
-                    headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
-                    json={
-                        "messaging_product": "whatsapp",
-                        "to": user_phone,
-                        "text": {"body": response_data["text"]},
-                        # "context": {"message_id": message["id"]},  # Uncomment if you want to reply user message
-                    },
                 )
 
             # Mark the message as read
