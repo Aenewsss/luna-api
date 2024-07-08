@@ -155,6 +155,8 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 },
             )
         elif message.get("type") == "button":
+            business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
+            
             user_phone = message.get("from")
 
             button_payload = message.get("button", {}).get("payload")
