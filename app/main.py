@@ -99,6 +99,8 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
         message = messages[0]
 
+        print('\nline 102 data', data, '\n')
+
         if message.get("type") == "text":
             business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
             if not business_phone_number_id:
