@@ -25,8 +25,8 @@ def get_all_info(user_id: int, db: Session):
     return [InfoResponse.model_validate(info, from_attributes=True) for info in infos]
 
 
-def remove_info(user_id: int, db: Session):
-    info = db.query(Info).filter(Info.user_id == user_id).first()
+def remove_info(id: int, db: Session):
+    info = db.query(Info).filter(Info.id == id).first()
 
     if not info:
         return {"text": "Informação não encontrada"}

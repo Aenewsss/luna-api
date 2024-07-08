@@ -155,21 +155,13 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
         elif message.get("type") == "button":
             user_phone = message.get("from")
 
-            if user_phone:
-                user = db.query(UserModel).filter(UserModel.phone == user_phone).first()
-
-                if not user:
-                    raise HTTPException(status_code=404, detail="User not found")
-
-                user_id = user.id
-
             button_payload = message.get("button", {}).get("payload")
             button_text = message.get("button", {}).get("text")
 
             if button_text == "Sim":
                 length = len(button_payload)
                 id = button_payload[length - 1:length + 1]
-                response_text = remove_info(user_id, id)
+                response_text = remove_info(id, db)
             elif button_text == "Não":
                 response_text = "Remoção da informação cancelada."
 
