@@ -163,14 +163,23 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             button_text = message.get("button", {}).get("text")
 
             if button_text == "Sim":
-                if button_payload.find('remove'):
+                if 'remove' in button_payload:
                     length = len(button_payload)
                     id = button_payload[length - 1:length + 1]
                     response_text = remove_info(id, db)
-                elif button_payload.find('update'):
+                elif 'update' in button_payload:
                     print('\nbutton_payload_update', button_payload)
-                    # length = len(button_payload)
-                    # id = button_payload[length - 1:length + 1]
+
+                    index_id = button_payload.find('id:')
+                    id = button_payload[index_id + 3:length + 17]
+
+                    print('\nline 174 id:', id)
+
+                    index_content = button_payload.find('content:')
+                    content = button_payload[index_content + 8:length + len(button_payload) -1]
+                    print('\nline 180 id:', content)
+
+                    
                     # response_text = update_info(id, db)
             elif button_text == "Não":
                 response_text = "Solicitação cancelada."
@@ -445,7 +454,7 @@ def flow_update_info(tool_call_id, name, user_id, db):
     info_id_str = completion_info_id.choices[0].message.content
 
     print('\nline 441:', info_id_str)
-    index =  info_id_str.find('{id=')
+    index =  info_id_str.find('id=')
     print('\nline 442:', info_id_str[index + 3 : len(info_id_str) - 1])
 
     info_id = info_id_str[index + 3 : len(info_id_str)]
@@ -469,7 +478,7 @@ def flow_update_info(tool_call_id, name, user_id, db):
     index_content =  info_content_str.find('content=')
     print('\nline 470:', info_content_str[index_content + 8 : len(info_content_str) -1])
 
-    info_content = info_content_str[index_content + 3 : len(info_content_str)]
+    info_content = info_content_str[index_content + 8 : len(info_content_str) -1]
 
     template_message = {
         "messaging_product": "whatsapp",
