@@ -166,7 +166,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 if 'remove' in button_payload:
                     length = len(button_payload)
                     id = button_payload[length - 1:length + 1]
-                    response_text = remove_info(id, db)
+                    response_text = remove_info(id, db)['text']
                 elif 'update' in button_payload:
                     print('\nbutton_payload_update', button_payload)
 
@@ -179,7 +179,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     content = button_payload[index_content + 8:index_content + len(button_payload) -1]
                     print('\nline 180 id:', content)
 
-                    response_text = update_info(id, content, db)
+                    response_text = update_info(id, content, db)['text']
             elif button_text == "Não":
                 response_text = "Solicitação cancelada."
 
