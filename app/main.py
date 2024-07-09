@@ -427,7 +427,7 @@ def flow_update_info(tool_call_id, name, user_id, db):
             + llama_response
             + "Encontre o id da informação na seguinte lista:"
             + info_str
-            + " e retorne somente o id no seguinte formato: '{'id': '[id encontrado]'}'"
+            + " e retorne somente o id no seguinte formato: id=[id encontrado]"
             ,
             "role": "tool",
             "tool_call_id": tool_call_id,
@@ -440,6 +440,8 @@ def flow_update_info(tool_call_id, name, user_id, db):
     info_id = completion_info_id.choices[0].message.content
 
     print('\nline 441:', info_id)
+    index =  info_id.find('id=')
+    print('\nline 442:', info_id[index + 3 : len(info_id)])
 
     template_message = {
         "messaging_product": "whatsapp",
