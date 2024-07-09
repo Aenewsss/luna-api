@@ -437,11 +437,13 @@ def flow_update_info(tool_call_id, name, user_id, db):
 
     completion_info_id = client.chat.completions.create(model=LLMODEL, messages=messages)
 
-    info_id = completion_info_id.choices[0].message.content
+    info_id_str = completion_info_id.choices[0].message.content
 
-    print('\nline 441:', info_id)
-    index =  info_id.find('id=')
-    print('\nline 442:', info_id[index + 3 : len(info_id)])
+    print('\nline 441:', info_id_str)
+    index =  info_id_str.find('id=')
+    print('\nline 442:', info_id_str[index + 3 : len(info_id_str)])
+
+    info_id = info_id_str[index + 3 : len(info_id_str)]
 
     template_message = {
         "messaging_product": "whatsapp",
