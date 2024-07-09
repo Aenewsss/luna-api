@@ -36,3 +36,16 @@ def remove_info(id: int, db: Session):
     db.commit()
 
     return {"text": "Informação removida com sucesso"}
+
+def update_info(id: int, content: str, db: Session):
+    info = db.query(Info).filter(Info.id == id).first()
+
+    if not info:
+        return {"text": "Informação não encontrada"}
+
+    print("\ninfo before",info)
+    info['content'] = content
+    print("\ninfo after",info)
+    db.commit()
+
+    return {"text": "Informação alterada com sucesso"}

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from groq import Groq
 from requests import Session
 import requests
-from app.info.info import get_all_info, remove_info, save_info
+from app.info.info import get_all_info, remove_info, save_info, update_info
 from app.models import models
 from app.classes.classes import InfoCreate, MessageRequest, User
 from app.environments import (
@@ -155,7 +155,6 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 },
             )
         elif message.get("type") == "button":
-            return
             business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
             
             user_phone = message.get("from")
@@ -164,11 +163,17 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             button_text = message.get("button", {}).get("text")
 
             if button_text == "Sim":
-                length = len(button_payload)
-                id = button_payload[length - 1:length + 1]
-                response_text = remove_info(id, db)
+                if button_payload.find('remove'):
+                    length = len(button_payload)
+                    id = button_payload[length - 1:length + 1]
+                    response_text = remove_info(id, db)
+                elif button_payload.find('update'):
+                    print('\nbutton_payload_update', button_payload)
+                    # length = len(button_payload)
+                    # id = button_payload[length - 1:length + 1]
+                    # response_text = update_info(id, db)
             elif button_text == "Não":
-                response_text = "Remoção da informação cancelada."
+                response_text = "Solicitação cancelada."
 
             # Send a response based on the button clicked
             requests.post(
@@ -427,7 +432,7 @@ def flow_update_info(tool_call_id, name, user_id, db):
             + llama_response
             + "Encontre o id da informação na seguinte lista:"
             + info_str
-            + " e retorne somente o id no seguinte formato: id=[id encontrado]"
+            + " e retorne somente o id no seguinte formato: {id=[id encontrado]}"
             ,
             "role": "tool",
             "tool_call_id": tool_call_id,
@@ -444,6 +449,27 @@ def flow_update_info(tool_call_id, name, user_id, db):
     print('\nline 442:', info_id_str[index + 3 : len(info_id_str)])
 
     info_id = info_id_str[index + 3 : len(info_id_str)]
+
+    messages.append(
+        {
+            "content": "Baseado nessa resposta que você me forneceu:"
+            + llama_response
+            + "Encontre somente o novo conteúdo que será alterado e retorne-o no seguinte formato: {content=[novo content]}",
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "name": name,
+        }
+    )
+
+    completion_info_content = client.chat.completions.create(model=LLMODEL, messages=messages)
+
+    info_content_str = completion_info_content.choices[0].message.content
+
+    print('\nline 468:', info_content_str)
+    index_content =  info_content_str.find('id=')
+    print('\nline 470:', info_content_str[index_content + 3 : len(info_content_str)])
+
+    info_content = info_content_str[index_content + 3 : len(info_content_str)]
 
     template_message = {
         "messaging_product": "whatsapp",
