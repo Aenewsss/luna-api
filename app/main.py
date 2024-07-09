@@ -445,8 +445,8 @@ def flow_update_info(tool_call_id, name, user_id, db):
     info_id_str = completion_info_id.choices[0].message.content
 
     print('\nline 441:', info_id_str)
-    index =  info_id_str.find('id=')
-    print('\nline 442:', info_id_str[index + 3 : len(info_id_str)])
+    index =  info_id_str.find('{id=')
+    print('\nline 442:', info_id_str[index + 3 : len(info_id_str) - 1])
 
     info_id = info_id_str[index + 3 : len(info_id_str)]
 
@@ -466,8 +466,8 @@ def flow_update_info(tool_call_id, name, user_id, db):
     info_content_str = completion_info_content.choices[0].message.content
 
     print('\nline 468:', info_content_str)
-    index_content =  info_content_str.find('id=')
-    print('\nline 470:', info_content_str[index_content + 3 : len(info_content_str)])
+    index_content =  info_content_str.find('content=')
+    print('\nline 470:', info_content_str[index_content + 8 : len(info_content_str) -1])
 
     info_content = info_content_str[index_content + 3 : len(info_content_str)]
 
@@ -499,7 +499,7 @@ def flow_update_info(tool_call_id, name, user_id, db):
                 "parameters": [
                     {
                         "type": "payload",
-                        "payload": f"update_info:{info_id}"
+                        "payload": f"update_info_id:{info_id}_update_info_content:{info_content}"
                     }
                 ]
             }
