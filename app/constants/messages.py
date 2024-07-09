@@ -25,6 +25,10 @@ messages = [
     },
     {
         "role": "system",
+        "content": "Quando alguém pedir para você atualizar, editar ou alterar alguma informação, você vai chamar a função update_info de suas tools.",
+    },
+    {
+        "role": "system",
         "content": "Quando alguém te agradecer por qualquer motivo, retribua o agradecimento e diga que está aqui para ajudar.",
     },
 ]

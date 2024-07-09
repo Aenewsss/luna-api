@@ -155,6 +155,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 },
             )
         elif message.get("type") == "button":
+            return
             business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
             
             user_phone = message.get("from")
@@ -245,10 +246,9 @@ async def chatLuna(db, user_message, user_id, user_name):
             elif name == "get_all_info":
                 return flow_get_all_info(name=name, user_id=user_id, db=db)
             elif name == "remove_info":
-                return flow_remove_info(
-                    tool_call_id=tool_call.id, name=name, user_id=user_id, db=db
-                )
-
+                return flow_remove_info(tool_call_id=tool_call.id, name=name, user_id=user_id, db=db)
+            elif name == "update_info":
+                return flow_update_info(tool_call_id=tool_call.id, name=name, user_id=user_id, db=db) 
 
 def chat_to_save_data(user_id: int, user_message: str, db: Session):
     completion = client.chat.completions.create(
@@ -298,7 +298,6 @@ def chat_to_save_data(user_id: int, user_message: str, db: Session):
                 )
                 return second_completion.choices[0].message.content
 
-
 def flow_save_info(
     tool_call_id, arguments, name, user_id: int, user_message: str, db: Session
 ):
@@ -315,7 +314,6 @@ def flow_save_info(
 
         return final_tool_message(response, tool_call_id, name)
 
-
 def flow_get_all_info(name, user_id, db):
     function = available_functions[name]
     response = (
@@ -324,7 +322,6 @@ def flow_get_all_info(name, user_id, db):
     )
 
     return {"text": response}
-
 
 def flow_remove_info(tool_call_id, name, user_id, db):
     infos = get_all_info(user_id, db)
@@ -343,6 +340,28 @@ def flow_remove_info(tool_call_id, name, user_id, db):
     )
 
     completion = client.chat.completions.create(model=LLMODEL, messages=messages)
+
+    llama_response = completion.choices[0].message.content
+
+    messages.append(
+        {
+            "content": "Baseado nessa resposta que você me forneceu:"
+            + llama_response
+            + "Encontre o id da informação na seguinte lista:"
+            + info_str
+            + " e retorne somente o id no seguinte formato: '{'id': '[id encontrado]'}'"
+            ,
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "name": name,
+        }
+    )
+
+    completion_info_id = client.chat.completions.create(model=LLMODEL, messages=messages)
+
+    info_id = completion_info_id.choices[0].message.content
+
+    print('\nline 365:', info_id)
 
     template_message = {
         "messaging_product": "whatsapp",
@@ -380,15 +399,85 @@ def flow_remove_info(tool_call_id, name, user_id, db):
         }
     }
 
-    return {"text": completion.choices[0].message.content, "template": template_message}
-    # function = available_functions[name]
-    # response = {
-    #     "message": "Aqui está a função que você deseja apagar:",
-    #     "infos": function(user_id, db),
-    # }
+    return {"text": llama_response, "template": template_message}
 
-    return response
+def flow_update_info(tool_call_id, name, user_id, db):
+    infos = get_all_info(user_id, db)
 
+    info_str = ", ".join(info.model_dump_json() for info in infos)
+
+    messages.append(
+        {
+            "content": "Encontre nessa lista de jsons a informação que é mais parecida com o que o usuário pediu para editar/atualizar/alterar:"
+            + info_str
+            + ". Após encontrar, mostre a informação e pergunte se ele realmente quer atualizar",
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "name": name,
+        }
+    )
+
+    completion = client.chat.completions.create(model=LLMODEL, messages=messages)
+
+    llama_response = completion.choices[0].message.content
+
+    messages.append(
+        {
+            "content": "Baseado nessa resposta que você me forneceu:"
+            + llama_response
+            + "Encontre o id da informação na seguinte lista:"
+            + info_str
+            + " e retorne somente o id no seguinte formato: '{'id': '[id encontrado]'}'"
+            ,
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "name": name,
+        }
+    )
+
+    completion_info_id = client.chat.completions.create(model=LLMODEL, messages=messages)
+
+    info_id = completion_info_id.choices[0].message.content
+
+    print('\nline 441:', info_id)
+
+    template_message = {
+        "messaging_product": "whatsapp",
+        # "to": user_phone,
+        "type": "template",
+        "template": {
+            "name": "remove_info",
+            "language": {
+                "code": "pt_BR"
+            },
+             "components": [
+            {
+                "type": "button",
+                "sub_type": "quick_reply",
+                "index": "0",
+                "parameters": [
+                    {
+                        "type": "payload",
+                        "payload": "keep_info"
+                    }
+                ]
+            },
+            {
+                "type": "button",
+                "sub_type": "quick_reply",
+                "index": "1",
+                "parameters": [
+                    {
+                        "type": "payload",
+                        "payload": f"update_info:{info_id}"
+                    }
+                ]
+            }
+        ]
+        }
+    }
+
+    return {"text": llama_response, "template": template_message}
 
 def final_tool_message(content, tool_call_id, name):
     messages.append(
