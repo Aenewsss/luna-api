@@ -25,7 +25,7 @@ messages = [
     },
     {
         "role": "system",
-        "content": "Quando alguém pedir para você atualizar, editar ou alterar alguma informação, você vai chamar a função update_info de suas tools.",
+        "content": "Quando alguém pedir para você atualizar, editar ou alterar alguma informação, você não vai explicar como fazer, mas você vai chamar a função update_info de suas tools.",
     },
     {
         "role": "system",

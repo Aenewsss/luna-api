@@ -45,6 +45,7 @@ class InfoCreate(BaseModel):
     content: str
     
 class InfoResponse(BaseModel):
+    id: str
     title:str
     content:str
 

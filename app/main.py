@@ -120,7 +120,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
             response_data = await chatLuna(db, user_message, user_id, user_name)
 
-            print('line 120 response_data',response_data)
+            print('\nline 120 response_data',response_data, '\n')
             # Send a WhatsApp message
             requests.post(
                 f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
@@ -137,7 +137,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 # Send a WhatsApp message
                 response_data["template"]["to"] = user_phone
 
-                print('line 124 response_data:',response_data["template"])
+                print('\nline 124 response_data:',response_data["template"],'\n')
                 requests.post(
                     f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
                     headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
@@ -410,7 +410,7 @@ def flow_update_info(tool_call_id, name, user_id, db):
         {
             "content": "Encontre nessa lista de jsons a informação que é mais parecida com o que o usuário pediu para editar/atualizar/alterar:"
             + info_str
-            + ". Após encontrar, mostre a informação e pergunte se ele realmente quer atualizar",
+            + ". Após encontrar, mostre a informação e pergunte se ele realmente quer trocar pela informação que ele mandou",
             "role": "tool",
             "tool_call_id": tool_call_id,
             "name": name,
@@ -446,7 +446,7 @@ def flow_update_info(tool_call_id, name, user_id, db):
         # "to": user_phone,
         "type": "template",
         "template": {
-            "name": "remove_info",
+            "name": "update_info",
             "language": {
                 "code": "pt_BR"
             },
