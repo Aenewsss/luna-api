@@ -44,7 +44,7 @@ def update_info(id: int, content: str, db: Session):
         return {"text": "Informação não encontrada"}
 
     print("\ninfo before",info)
-    info['content'] = content
+    info.content = content
     print("\ninfo after",info)
     db.commit()
 
