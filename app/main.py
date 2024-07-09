@@ -478,7 +478,7 @@ def flow_update_info(tool_call_id, name, user_id, db):
     index_content =  info_content_str.find('content')
     print('\nline 470:', info_content_str[index_content + 8 : len(info_content_str) -1])
 
-    info_content = info_content_str[index_content + 8 : len(info_content_str) -1]
+    info_content = info_content_str[index_content + 8 : len(info_content_str) -1].replace('"', '')
 
     template_message = {
         "messaging_product": "whatsapp",
