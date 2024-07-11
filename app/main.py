@@ -55,6 +55,17 @@ async def hello_world():
     print("\nline 207\n")
     return {"message": "Hello World!"}
 
+@app.post("/scheduleappointment")
+async def schedule_appointment(request: Request):
+    try:
+        data = await request.json()
+        print("Received data:", data)
+        # Handle the data here
+        # Return a response with a status code 200
+        return Response(status_code=200)
+    except Exception as e:
+        print("Error:", e)
+        return Response(status_code=500, content={"message": "Internal Server Error"})
 
 @app.get("/wpp-webhook")
 async def wpp_webhook(request: Request):
