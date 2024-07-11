@@ -570,7 +570,7 @@ def decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vect
 
     # Decrypt the AES encryption key
     encrypted_aes_key = b64decode(encrypted_aes_key_b64)
-    private_key = load_pem_private_key(FLOW_WPP_PRIVATE_KEY.encode('utf-8'), password=FLOW_WPP_PRIVATE_KEY_PASSWORD)
+    private_key = load_pem_private_key(FLOW_WPP_PRIVATE_KEY.encode('utf-8'), password=FLOW_WPP_PRIVATE_KEY_PASSWORD.encode('utf-8'))
     aes_key = private_key.decrypt(encrypted_aes_key, OAEP(
         mgf=MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
 
