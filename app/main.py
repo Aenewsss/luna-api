@@ -13,6 +13,7 @@ from app.models import models
 from app.classes.classes import InfoCreate, MessageRequest, User
 from app.environments import (
     FLOW_WPP_PRIVATE_KEY,
+    FLOW_WPP_PRIVATE_KEY_PASSWORD,
     GRAPH_API_TOKEN,
     LLMODEL,
     LUNA_DEV_KEY,
@@ -569,7 +570,7 @@ def decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vect
 
     # Decrypt the AES encryption key
     encrypted_aes_key = b64decode(encrypted_aes_key_b64)
-    private_key = load_pem_private_key(FLOW_WPP_PRIVATE_KEY.encode('utf-8'), password=None)
+    private_key = load_pem_private_key(FLOW_WPP_PRIVATE_KEY.encode('utf-8'), password=FLOW_WPP_PRIVATE_KEY_PASSWORD)
     aes_key = private_key.decrypt(encrypted_aes_key, OAEP(
         mgf=MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
 
