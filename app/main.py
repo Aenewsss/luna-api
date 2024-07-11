@@ -154,6 +154,17 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                         "template": {
                             "name": "register_flow",
                             "language": {"code": "pt_BR"},
+                            "components": [
+                                {
+                                    "type": "body",
+                                    "parameters": [
+                                        {
+                                            "type": "text",
+                                            "text": "Torne-se um Lunático!",  # Adjust this if needed
+                                        }
+                                    ],
+                                }
+                            ],
                         },
                     }
 
