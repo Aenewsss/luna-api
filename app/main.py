@@ -61,32 +61,33 @@ async def hello_world():
     print("\nline 207\n")
     return {"message": "Hello World!"}
 
+
 @app.post("/wpp-flow")
 async def validate_wpp_flow(request: Request):
     try:
         data = await request.json()
         print("Received data:", data)
 
-        encrypted_flow_data_b64 = data['encrypted_flow_data']
-        encrypted_aes_key_b64 = data['encrypted_aes_key']
-        initial_vector_b64 = data['initial_vector']
-        
-        decrypted_data, aes_key, iv = decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64)
-        print('\ndecrypted_data:',decrypted_data)
+        encrypted_flow_data_b64 = data["encrypted_flow_data"]
+        encrypted_aes_key_b64 = data["encrypted_aes_key"]
+        initial_vector_b64 = data["initial_vector"]
+
+        decrypted_data, aes_key, iv = decrypt_request(
+            encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64
+        )
+        print("\ndecrypted_data:", decrypted_data)
 
         # Return the next screen & data to the client
-        response = {
-            "version": decrypted_data['version'],
-            "data": {
-                "status": "active"
-            }
-        }
+        response = {"version": decrypted_data["version"], "data": {"status": "active"}}
 
         # Return the response as plaintext
-        return Response(content=encrypt_response(response, aes_key, iv), media_type='text/plain')
+        return Response(
+            content=encrypt_response(response, aes_key, iv), media_type="text/plain"
+        )
     except Exception as e:
         print("Error:", e)
         return Response(status_code=500, content={"message": "Internal Server Error"})
+
 
 @app.get("/wpp-webhook")
 async def wpp_webhook(request: Request):
@@ -131,7 +132,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
         message = messages[0]
 
-        print('\nline 102 data', data, '\n')
+        print("\nline 102 data", data, "\n")
 
         if message.get("type") == "text":
             business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
@@ -145,14 +146,41 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 user = db.query(UserModel).filter(UserModel.phone == user_phone).first()
 
                 if not user:
-                    raise HTTPException(status_code=404, detail="User not found")
+                    # Send a WhatsApp message
+                    template_message = {
+                        "messaging_product": "whatsapp",
+                        "to": user_phone,
+                        "type": "template",
+                        "template": {
+                            "name": "register_flow",
+                            "language": {"code": "pt_BR"},
+                        },
+                    }
+
+                    requests.post(
+                        f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                        headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                        json=template_message,
+                    )
+
+                    requests.post(
+                        f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                        headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                        json={
+                            "messaging_product": "whatsapp",
+                            "status": "read",
+                            "message_id": message["id"],
+                        },
+                    )
+
+                    return Response(status_code=200)
 
                 user_id = user.id
                 user_name = user.name
 
             response_data = await chatLuna(db, user_message, user_id, user_name)
 
-            print('\nline 120 response_data',response_data, '\n')
+            print("\nline 120 response_data", response_data, "\n")
             # Send a WhatsApp message
             requests.post(
                 f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
@@ -169,7 +197,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 # Send a WhatsApp message
                 response_data["template"]["to"] = user_phone
 
-                print('\nline 124 response_data:',response_data["template"],'\n')
+                print("\nline 124 response_data:", response_data["template"], "\n")
                 requests.post(
                     f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
                     headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
@@ -188,30 +216,32 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             )
         elif message.get("type") == "button":
             business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
-            
+
             user_phone = message.get("from")
 
             button_payload = message.get("button", {}).get("payload")
             button_text = message.get("button", {}).get("text")
 
             if button_text == "Sim":
-                if 'remove' in button_payload:
+                if "remove" in button_payload:
                     length = len(button_payload)
-                    id = button_payload[length - 1:length + 1]
-                    response_text = remove_info(id, db)['text']
-                elif 'update' in button_payload:
-                    print('\nbutton_payload_update', button_payload)
+                    id = button_payload[length - 1 : length + 1]
+                    response_text = remove_info(id, db)["text"]
+                elif "update" in button_payload:
+                    print("\nbutton_payload_update", button_payload)
 
-                    index_id = button_payload.find('id:')
-                    id = button_payload[index_id + 3:index_id + 4]
+                    index_id = button_payload.find("id:")
+                    id = button_payload[index_id + 3 : index_id + 4]
 
-                    print('\nline 174 id:', id)
+                    print("\nline 174 id:", id)
 
-                    index_content = button_payload.find('content:')
-                    content = button_payload[index_content + 8:index_content + len(button_payload) -1]
-                    print('\nline 180 id:', content)
+                    index_content = button_payload.find("content:")
+                    content = button_payload[
+                        index_content + 8 : index_content + len(button_payload) - 1
+                    ]
+                    print("\nline 180 id:", content)
 
-                    response_text = update_info(id, content, db)['text']
+                    response_text = update_info(id, content, db)["text"]
             elif button_text == "Não":
                 response_text = "Solicitação cancelada."
 
@@ -223,7 +253,9 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     "messaging_product": "whatsapp",
                     "to": user_phone,
                     "text": {"body": response_text},
-                    "context": {"message_id": message["id"]},  # Uncomment if you want to reply user message
+                    "context": {
+                        "message_id": message["id"]
+                    },  # Uncomment if you want to reply user message
                 },
             )
 
@@ -291,9 +323,14 @@ async def chatLuna(db, user_message, user_id, user_name):
             elif name == "get_all_info":
                 return flow_get_all_info(name=name, user_id=user_id, db=db)
             elif name == "remove_info":
-                return flow_remove_info(tool_call_id=tool_call.id, name=name, user_id=user_id, db=db)
+                return flow_remove_info(
+                    tool_call_id=tool_call.id, name=name, user_id=user_id, db=db
+                )
             elif name == "update_info":
-                return flow_update_info(tool_call_id=tool_call.id, name=name, user_id=user_id, db=db) 
+                return flow_update_info(
+                    tool_call_id=tool_call.id, name=name, user_id=user_id, db=db
+                )
+
 
 def chat_to_save_data(user_id: int, user_message: str, db: Session):
     completion = client.chat.completions.create(
@@ -343,6 +380,7 @@ def chat_to_save_data(user_id: int, user_message: str, db: Session):
                 )
                 return second_completion.choices[0].message.content
 
+
 def flow_save_info(
     tool_call_id, arguments, name, user_id: int, user_message: str, db: Session
 ):
@@ -359,6 +397,7 @@ def flow_save_info(
 
         return final_tool_message(response, tool_call_id, name)
 
+
 def flow_get_all_info(name, user_id, db):
     function = available_functions[name]
     response = (
@@ -367,6 +406,7 @@ def flow_get_all_info(name, user_id, db):
     )
 
     return {"text": response}
+
 
 def flow_remove_info(tool_call_id, name, user_id, db):
     infos = get_all_info(user_id, db)
@@ -394,19 +434,20 @@ def flow_remove_info(tool_call_id, name, user_id, db):
             + llama_response
             + "Encontre o id da informação na seguinte lista:"
             + info_str
-            + " e retorne somente o id no seguinte formato: '{'id': '[id encontrado]'}'"
-            ,
+            + " e retorne somente o id no seguinte formato: '{'id': '[id encontrado]'}'",
             "role": "tool",
             "tool_call_id": tool_call_id,
             "name": name,
         }
     )
 
-    completion_info_id = client.chat.completions.create(model=LLMODEL, messages=messages)
+    completion_info_id = client.chat.completions.create(
+        model=LLMODEL, messages=messages
+    )
 
     info_id = completion_info_id.choices[0].message.content
 
-    print('\nline 365:', info_id)
+    print("\nline 365:", info_id)
 
     template_message = {
         "messaging_product": "whatsapp",
@@ -414,37 +455,26 @@ def flow_remove_info(tool_call_id, name, user_id, db):
         "type": "template",
         "template": {
             "name": "remove_info",
-            "language": {
-                "code": "pt_BR"
-            },
-             "components": [
-            {
-                "type": "button",
-                "sub_type": "quick_reply",
-                "index": "0",
-                "parameters": [
-                    {
-                        "type": "payload",
-                        "payload": "keep_info"
-                    }
-                ]
-            },
-            {
-                "type": "button",
-                "sub_type": "quick_reply",
-                "index": "1",
-                "parameters": [
-                    {
-                        "type": "payload",
-                        "payload": f"remove_info:{2}"
-                    }
-                ]
-            }
-        ]
-        }
+            "language": {"code": "pt_BR"},
+            "components": [
+                {
+                    "type": "button",
+                    "sub_type": "quick_reply",
+                    "index": "0",
+                    "parameters": [{"type": "payload", "payload": "keep_info"}],
+                },
+                {
+                    "type": "button",
+                    "sub_type": "quick_reply",
+                    "index": "1",
+                    "parameters": [{"type": "payload", "payload": f"remove_info:{2}"}],
+                },
+            ],
+        },
     }
 
     return {"text": llama_response, "template": template_message}
+
 
 def flow_update_info(tool_call_id, name, user_id, db):
     infos = get_all_info(user_id, db)
@@ -472,21 +502,22 @@ def flow_update_info(tool_call_id, name, user_id, db):
             + llama_response
             + "Encontre o id da informação na seguinte lista:"
             + info_str
-            + " e retorne somente o id no seguinte formato: {id=[id encontrado]}"
-            ,
+            + " e retorne somente o id no seguinte formato: {id=[id encontrado]}",
             "role": "tool",
             "tool_call_id": tool_call_id,
             "name": name,
         }
     )
 
-    completion_info_id = client.chat.completions.create(model=LLMODEL, messages=messages)
+    completion_info_id = client.chat.completions.create(
+        model=LLMODEL, messages=messages
+    )
 
     info_id_str = completion_info_id.choices[0].message.content
 
-    print('\nline 441:', info_id_str)
-    index =  info_id_str.find('id')
-    print('\nline 442:', info_id_str[index + 3 : len(info_id_str) - 1])
+    print("\nline 441:", info_id_str)
+    index = info_id_str.find("id")
+    print("\nline 442:", info_id_str[index + 3 : len(info_id_str) - 1])
 
     info_id = info_id_str[index + 3 : len(info_id_str) - 1]
 
@@ -501,15 +532,21 @@ def flow_update_info(tool_call_id, name, user_id, db):
         }
     )
 
-    completion_info_content = client.chat.completions.create(model=LLMODEL, messages=messages)
+    completion_info_content = client.chat.completions.create(
+        model=LLMODEL, messages=messages
+    )
 
     info_content_str = completion_info_content.choices[0].message.content
 
-    print('\nline 468:', info_content_str)
-    index_content =  info_content_str.find('content')
-    print('\nline 470:', info_content_str[index_content + 8 : len(info_content_str) -1])
+    print("\nline 468:", info_content_str)
+    index_content = info_content_str.find("content")
+    print(
+        "\nline 470:", info_content_str[index_content + 8 : len(info_content_str) - 1]
+    )
 
-    info_content = info_content_str[index_content + 8 : len(info_content_str) -1].replace('"', '')
+    info_content = info_content_str[
+        index_content + 8 : len(info_content_str) - 1
+    ].replace('"', "")
 
     template_message = {
         "messaging_product": "whatsapp",
@@ -517,37 +554,31 @@ def flow_update_info(tool_call_id, name, user_id, db):
         "type": "template",
         "template": {
             "name": "update_info",
-            "language": {
-                "code": "pt_BR"
-            },
-             "components": [
-            {
-                "type": "button",
-                "sub_type": "quick_reply",
-                "index": "0",
-                "parameters": [
-                    {
-                        "type": "payload",
-                        "payload": "keep_info"
-                    }
-                ]
-            },
-            {
-                "type": "button",
-                "sub_type": "quick_reply",
-                "index": "1",
-                "parameters": [
-                    {
-                        "type": "payload",
-                        "payload": f"update_info_id:{info_id}_update_info_content:{info_content}"
-                    }
-                ]
-            }
-        ]
-        }
+            "language": {"code": "pt_BR"},
+            "components": [
+                {
+                    "type": "button",
+                    "sub_type": "quick_reply",
+                    "index": "0",
+                    "parameters": [{"type": "payload", "payload": "keep_info"}],
+                },
+                {
+                    "type": "button",
+                    "sub_type": "quick_reply",
+                    "index": "1",
+                    "parameters": [
+                        {
+                            "type": "payload",
+                            "payload": f"update_info_id:{info_id}_update_info_content:{info_content}",
+                        }
+                    ],
+                },
+            ],
+        },
     }
 
     return {"text": llama_response, "template": template_message}
+
 
 def final_tool_message(content, tool_call_id, name):
     messages.append(
@@ -569,17 +600,26 @@ def decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vect
 
     # Decrypt the AES encryption key
     encrypted_aes_key = b64decode(encrypted_aes_key_b64)
-    private_key = load_pem_private_key(FLOW_WPP_PRIVATE_KEY.encode('utf-8'), password=FLOW_WPP_PRIVATE_KEY_PASSWORD.encode('utf-8'))
-    aes_key = private_key.decrypt(encrypted_aes_key, OAEP(
-        mgf=MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
+    private_key = load_pem_private_key(
+        FLOW_WPP_PRIVATE_KEY.encode("utf-8"),
+        password=FLOW_WPP_PRIVATE_KEY_PASSWORD.encode("utf-8"),
+    )
+    aes_key = private_key.decrypt(
+        encrypted_aes_key,
+        OAEP(
+            mgf=MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None
+        ),
+    )
 
     # Decrypt the Flow data
     encrypted_flow_data_body = flow_data[:-16]
     encrypted_flow_data_tag = flow_data[-16:]
-    decryptor = Cipher(algorithms.AES(aes_key),
-                       modes.GCM(iv, encrypted_flow_data_tag)).decryptor()
-    decrypted_data_bytes = decryptor.update(
-        encrypted_flow_data_body) + decryptor.finalize()
+    decryptor = Cipher(
+        algorithms.AES(aes_key), modes.GCM(iv, encrypted_flow_data_tag)
+    ).decryptor()
+    decrypted_data_bytes = (
+        decryptor.update(encrypted_flow_data_body) + decryptor.finalize()
+    )
     decrypted_data = json.loads(decrypted_data_bytes.decode("utf-8"))
     return decrypted_data, aes_key, iv
 
@@ -591,10 +631,9 @@ def encrypt_response(response, aes_key, iv):
         flipped_iv.append(byte ^ 0xFF)
 
     # Encrypt the response data
-    encryptor = Cipher(algorithms.AES(aes_key),
-                       modes.GCM(flipped_iv)).encryptor()
+    encryptor = Cipher(algorithms.AES(aes_key), modes.GCM(flipped_iv)).encryptor()
     return b64encode(
-        encryptor.update(json.dumps(response).encode("utf-8")) +
-        encryptor.finalize() +
-        encryptor.tag
+        encryptor.update(json.dumps(response).encode("utf-8"))
+        + encryptor.finalize()
+        + encryptor.tag
     ).decode("utf-8")
