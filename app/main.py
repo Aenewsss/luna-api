@@ -62,7 +62,7 @@ async def hello_world():
     return {"message": "Hello World!"}
 
 @app.post("/wpp-flow")
-async def schedule_appointment(request: Request):
+async def validate_wpp_flow(request: Request):
     try:
         data = await request.json()
         print("Received data:", data)
@@ -77,9 +77,8 @@ async def schedule_appointment(request: Request):
         # Return the next screen & data to the client
         response = {
             "version": decrypted_data['version'],
-            "screen": "SCREEN_NAME",
             "data": {
-                "some_key": "some_value"
+                "status": "active"
             }
         }
 
