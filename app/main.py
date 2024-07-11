@@ -148,27 +148,21 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 if not user:
                     # Send a WhatsApp message
                     flow_message = {
-                        "name": "register_flow",
-                        "language": "pt_BR",
-                        "category": "MARKETING",
-                        "components": [
-                            {
-                                "type": "body",
-                                "text": "This is a flows as template demo",
-                            },
-                            {
-                                "type": "BUTTONS",
-                                "buttons": [
-                                    {
-                                        "type": "FLOW",
-                                        "text": "Salvar!",
-                                        "flow_id": "3432957240332978",
-                                        "navigate_screen": "Flows Json screen name",
-                                        "flow_action": "navigate",
-                                    }
-                                ],
-                            },
-                        ],
+                        "messaging_product": "whatsapp",
+                        "recipient_type": "individual",
+                        "to": user_phone,
+                        "type": "template",
+                        "template": {
+                            "name": "register_flow",
+                            "language": {"code": "pt_BR"},
+                            "components": [
+                                {
+                                    "type": "button",
+                                    "sub_type": "flow",
+                                    "index": "0",
+                                }
+                            ],
+                        },
                     }
 
                     requests.post(
