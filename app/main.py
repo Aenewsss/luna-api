@@ -1,3 +1,4 @@
+from base64 import b64decode, b64encode
 import json
 import logging
 import os
@@ -11,6 +12,7 @@ from app.info.info import get_all_info, remove_info, save_info, update_info
 from app.models import models
 from app.classes.classes import InfoCreate, MessageRequest, User
 from app.environments import (
+    FLOW_WPP_PRIVATE_KEY,
     GRAPH_API_TOKEN,
     LLMODEL,
     LUNA_DEV_KEY,
@@ -23,6 +25,9 @@ from app.auth.auth import router as auth_router, validate_token
 from app.database.database import engine, get_db
 from app.middlewares.user import UserMiddleware
 from app.models.models import User as UserModel
+from cryptography.hazmat.primitives.asymmetric.padding import OAEP, MGF1, hashes
+from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -55,14 +60,30 @@ async def hello_world():
     print("\nline 207\n")
     return {"message": "Hello World!"}
 
-@app.post("/scheduleappointment")
+@app.post("/wpp-flow")
 async def schedule_appointment(request: Request):
     try:
         data = await request.json()
         print("Received data:", data)
-        # Handle the data here
-        # Return a response with a status code 200
-        return Response(status_code=200)
+
+        encrypted_flow_data_b64 = data['encrypted_flow_data']
+        encrypted_aes_key_b64 = data['encrypted_aes_key']
+        initial_vector_b64 = data['initial_vector']
+        
+        decrypted_data, aes_key, iv = decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64)
+        print('\ndecrypted_data:',decrypted_data)
+
+        # Return the next screen & data to the client
+        response = {
+            "version": decrypted_data['version'],
+            "screen": "SCREEN_NAME",
+            "data": {
+                "some_key": "some_value"
+            }
+        }
+
+        # Return the response as plaintext
+        return Response(content=encrypt_response(response, aes_key, iv), media_type='text/plain')
     except Exception as e:
         print("Error:", e)
         return Response(status_code=500, content={"message": "Internal Server Error"})
@@ -540,3 +561,40 @@ def final_tool_message(content, tool_call_id, name):
 
     completion = client.chat.completions.create(model=LLMODEL, messages=messages)
     return {"text": completion.choices[0].message.content}
+
+
+def decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64):
+    flow_data = b64decode(encrypted_flow_data_b64)
+    iv = b64decode(initial_vector_b64)
+
+    # Decrypt the AES encryption key
+    encrypted_aes_key = b64decode(encrypted_aes_key_b64)
+    private_key = load_pem_private_key(FLOW_WPP_PRIVATE_KEY.encode('utf-8'), password=None)
+    aes_key = private_key.decrypt(encrypted_aes_key, OAEP(
+        mgf=MGF1(algorithm=hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
+
+    # Decrypt the Flow data
+    encrypted_flow_data_body = flow_data[:-16]
+    encrypted_flow_data_tag = flow_data[-16:]
+    decryptor = Cipher(algorithms.AES(aes_key),
+                       modes.GCM(iv, encrypted_flow_data_tag)).decryptor()
+    decrypted_data_bytes = decryptor.update(
+        encrypted_flow_data_body) + decryptor.finalize()
+    decrypted_data = json.loads(decrypted_data_bytes.decode("utf-8"))
+    return decrypted_data, aes_key, iv
+
+
+def encrypt_response(response, aes_key, iv):
+    # Flip the initialization vector
+    flipped_iv = bytearray()
+    for byte in iv:
+        flipped_iv.append(byte ^ 0xFF)
+
+    # Encrypt the response data
+    encryptor = Cipher(algorithms.AES(aes_key),
+                       modes.GCM(flipped_iv)).encryptor()
+    return b64encode(
+        encryptor.update(json.dumps(response).encode("utf-8")) +
+        encryptor.finalize() +
+        encryptor.tag
+    ).decode("utf-8")
