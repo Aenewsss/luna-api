@@ -147,31 +147,34 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
                 if not user:
                     # Send a WhatsApp message
-                    template_message = {
-                        "messaging_product": "whatsapp",
-                        "to": user_phone,
-                        "type": "template",
-                        "template": {
-                            "name": "register_flow",
-                            "language": {"code": "pt_BR"},
-                            "components": [
-                                {
-                                    "type": "body",
-                                    "parameters": [
-                                        {
-                                            "type": "text",
-                                            "text": "Torne-se um Lunático!",  # Adjust this if needed
-                                        }
-                                    ],
-                                }
-                            ],
-                        },
+                    flow_message = {
+                        "name": "register_flow",
+                        "language": "pt_BR",
+                        "category": "MARKETING",
+                        "components": [
+                            {
+                                "type": "body",
+                                "text": "This is a flows as template demo",
+                            },
+                            {
+                                "type": "BUTTONS",
+                                "buttons": [
+                                    {
+                                        "type": "FLOW",
+                                        "text": "Salvar!",
+                                        "flow_id": "3432957240332978",
+                                        "navigate_screen": "Flows Json screen name",
+                                        "flow_action": "navigate",
+                                    }
+                                ],
+                            },
+                        ],
                     }
 
                     requests.post(
                         f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
                         headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
-                        json=template_message,
+                        json=flow_message,
                     )
 
                     requests.post(
