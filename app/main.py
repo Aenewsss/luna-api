@@ -292,7 +292,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     json={
                         "messaging_product": "whatsapp",
                         "to": user_phone,
-                        "text": {"body": "Olá, Davi! Agora que lhe conheço, podemos começar! Primeiro gostaria de informar que temos um tutorial para que possa entender como eu posso lhe ajudar: https://lunaassistente.framer.ai, acesse sempre que tiver dúvidas!"},
+                        "text": {"body": f"Olá, {name}! Agora que lhe conheço, podemos começar! Primeiro gostaria de informar que temos um tutorial para que possa entender como eu posso lhe ajudar: https://lunaassistente.framer.ai, acesse sempre que tiver dúvidas!"},
                     },
                 )
 

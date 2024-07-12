@@ -24,7 +24,7 @@ def get_all_info_by_user_phone(user_phone: int, db: Session):
         return []
 
     info_array = [InfoResponse.model_validate(info, from_attributes=True) for info in infos]
-    info_str = ",\n".join(info.model_dump_json() for info in info_array)
+    info_str = "\n\n•".join(info.model_dump_json() for info in info_array)
     
     return info_str
 
