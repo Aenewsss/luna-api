@@ -302,7 +302,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             print('\nline 266', user_phone)
             
             interactive = message.get("interactive", {})
-            response_json = interactive["nfm_reply"].get("response_json")
+            response_json = interactive["nfm_reply"].get("response_json") if interactive.get("nfm_reply") else interactive["list_reply"] 
             flow_data = json.loads(response_json)
 
             print('\nline 272', flow_data)
@@ -370,7 +370,64 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                         "message_id": message["id"],
                     },
                 )
+            elif flow_data.get("id"):
+                id_str = flow_data.get("id")
+                id = id_str[12:len(id_str)]
+                template_message = {
+                    "messaging_product": "whatsapp",
+                    "type": "template",
+                    "template": {
+                        "name": "choose_one_service",
+                        "language": {"code": "pt_BR"},
+                        "components": [
+                            {
+                                "type": "button",
+                                "sub_type": "quick_reply",
+                                "index": "0",
+                                "parameters": [{"type": "payload", "payload": "save_info"}],
+                            },
+                            {
+                                "type": "button",
+                                "sub_type": "quick_reply",
+                                "index": "1",
+                                "parameters": [{"type": "payload", "payload": "list_infos"}],
+                            },
+                            {
+                                "type": "button",
+                                "sub_type": "quick_reply",
+                                "index": "2",
+                                "parameters": [{"type": "payload", "payload": "update_info"}],
+                            },
+                            {
+                                "type": "button",
+                                "sub_type": "quick_reply",
+                                "index": "3",
+                                "parameters": [{"type": "payload", "payload": "remove_info"}],
+                            },
+                        ],
+                    },
+                }
+                if "remove" in id_str:
+                    response_text = remove_info(id, db)
+                elif "update" in id_str:
+                    # response_text = update_info(id, db)
+                    response_text = "Fluxo de atualização em desenvolvimento"
 
+            requests.post(
+                f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                json={
+                    "messaging_product": "whatsapp",
+                    "to": user_phone,
+                    "text": {"body": response_text},
+                },
+            )
+            requests.post(
+                f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                json=template_message
+            )
+            
         return Response(status_code=200)
 
     except HTTPException as e:
