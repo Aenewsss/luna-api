@@ -808,6 +808,7 @@ def format_infos_to_interactive_message_remove(infos, user_phone):
         })
 
     message = {
+        "messaging_product": "whatsapp",
         "recipient_type": "individual",
         "to": user_phone,  # Replace with actual recipient phone number
         "type": "interactive",
@@ -838,6 +839,7 @@ def format_infos_to_interactive_message_update(infos, user_phone):
         })
 
     message = {
+        "messaging_product": "whatsapp",
         "recipient_type": "individual",
         "to": user_phone,  # Replace with actual recipient phone number
         "type": "interactive",
