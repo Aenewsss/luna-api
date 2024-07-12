@@ -281,7 +281,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
                 print('\nline 282', flow_data, name,email,password, confirm_password, birthdate,)
                 
-                new_user = UserCreate(name=name,email=email,birthdate=birthdate,password=get_password_hash(confirm_password))
+                new_user = UserCreate(name=name,email=email, phone=user_phone,birthdate=birthdate,password=get_password_hash(confirm_password))
                 print('\n\nline 265 new_user:', new_user)
                 db.add(new_user)
                 db.commit()
