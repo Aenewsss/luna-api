@@ -277,6 +277,45 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             elif button_payload == "list_infos":
                 infos = get_all_info_formatted_by_user_phone(user_phone, db)
                 response_text = "Aqui estão as suas informações: " + infos
+                template_message = {
+                    "messaging_product": "whatsapp",
+                    "type": "template",
+                    "template": {
+                        "name": "choose_one_service",
+                        "language": {"code": "pt_BR"},
+                        "components": [
+                            {
+                                "type": "button",
+                                "sub_type": "quick_reply",
+                                "index": "0",
+                                "parameters": [{"type": "payload", "payload": "save_info"}],
+                            },
+                            {
+                                "type": "button",
+                                "sub_type": "quick_reply",
+                                "index": "1",
+                                "parameters": [{"type": "payload", "payload": "list_infos"}],
+                            },
+                            {
+                                "type": "button",
+                                "sub_type": "quick_reply",
+                                "index": "2",
+                                "parameters": [{"type": "payload", "payload": "update_info"}],
+                            },
+                            {
+                                "type": "button",
+                                "sub_type": "quick_reply",
+                                "index": "3",
+                                "parameters": [{"type": "payload", "payload": "remove_info"}],
+                            },
+                        ],
+                    },
+                }
+                requests.post(
+                    f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                    headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                    json=template_message
+                )
             elif button_payload == "update_info":
                 print('\n line 239')
                 infos = get_all_info_by_user_phone(user_phone, db)
