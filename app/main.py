@@ -277,7 +277,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 email = flow_data.get("screen_0_TextInput_1")
                 password = flow_data.get("screen_0_TextInput_3")
                 confirm_password = flow_data.get("screen_0_TextInput_4")
-                birthdate = int(flow_data.get("screen_0_DatePicker_2"))
+                birthdate = int(flow_data.get("screen_0_DatePicker_2")) / 1000
 
                 print('\nline 282', flow_data, name,email,password, confirm_password, birthdate,)
                 
