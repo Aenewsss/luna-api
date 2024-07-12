@@ -238,7 +238,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             elif button_payload == "update_info":
                 print('\n line 239')
                 infos = get_all_info_by_user_phone(user_phone, db)
-                interactive_message = format_infos_to_interactive_message_update(infos)
+                interactive_message = format_infos_to_interactive_message_update(infos,user_phone)
                 print('\n line 242',interactive_message)
 
                 requests.post(
@@ -254,7 +254,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             elif button_payload == "remove_info":
                 print('\n line 253')
                 infos = get_all_info_by_user_phone(user_phone, db)
-                interactive_message = format_infos_to_interactive_message_remove(infos)
+                interactive_message = format_infos_to_interactive_message_remove(infos,user_phone)
                 print('\n line 256 interactive_message', interactive_message)
 
                 requests.post(
@@ -794,7 +794,7 @@ def encrypt_response(response, aes_key, iv):
 
 ######### END code to validate a flow ###########
 
-def format_infos_to_interactive_message_remove(infos):
+def format_infos_to_interactive_message_remove(infos, user_phone):
     buttons = []
     for i, info in enumerate(infos):
         buttons.append({
@@ -807,7 +807,7 @@ def format_infos_to_interactive_message_remove(infos):
 
     message = {
         "messaging_product": "whatsapp",
-        "to": "recipient_phone_number",  # Replace with actual recipient phone number
+        "to": user_phone,  # Replace with actual recipient phone number
         "type": "interactive",
         "interactive": {
             "type": "button",
@@ -821,7 +821,7 @@ def format_infos_to_interactive_message_remove(infos):
     }
     return message
 
-def format_infos_to_interactive_message_update(infos):
+def format_infos_to_interactive_message_update(infos, user_phone):
     buttons = []
     for i, info in enumerate(infos):
         buttons.append({
@@ -834,7 +834,7 @@ def format_infos_to_interactive_message_update(infos):
 
     message = {
         "messaging_product": "whatsapp",
-        "to": "recipient_phone_number",  # Replace with actual recipient phone number
+        "to": user_phone,  # Replace with actual recipient phone number
         "type": "interactive",
         "interactive": {
             "type": "button",
