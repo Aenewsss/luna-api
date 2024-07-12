@@ -802,12 +802,9 @@ def format_infos_to_interactive_message_remove(infos, user_phone):
     
     for info in infos:
         sections[0].rows.append({
-            "title":"title da section",
-            "rows":[{
-                "id": f"remove_info_{info.id}",
-                "title": info.title,
-                "description": info.content  # Optional: add a description
-            }]
+            "id": f"remove_info_{info.id}",
+            "title": info.title,
+            "description": info.content  # Optional: add a description
         })
 
     message = {
@@ -836,12 +833,9 @@ def format_infos_to_interactive_message_update(infos, user_phone):
     
     for info in infos:
         sections[0].rows.append({
-            "title":"title da section",
-            "rows":[{
-                "id": f"update_info_{info.id}",
-                "title": info.title,
-                "description": info.content  # Optional: add a description
-            }]
+            "id": f"update_info_{info.id}",
+            "title": info.title,
+            "description": info.content  # Optional: add a description
         })
 
     message = {
