@@ -413,20 +413,20 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     # response_text = update_info(id, db)
                     response_text = "Fluxo de atualização em desenvolvimento"
 
-            requests.post(
-                f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
-                headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
-                json={
-                    "messaging_product": "whatsapp",
-                    "to": user_phone,
-                    "text": {"body": response_text},
-                },
-            )
-            requests.post(
-                f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
-                headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
-                json=template_message
-            )
+                requests.post(
+                    f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                    headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                    json={
+                        "messaging_product": "whatsapp",
+                        "to": user_phone,
+                        "text": {"body": response_text},
+                    },
+                )
+                requests.post(
+                    f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                    headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                    json=template_message
+                )
             
         return Response(status_code=200)
 
