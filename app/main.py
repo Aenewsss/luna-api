@@ -10,7 +10,7 @@ from requests import Session
 import requests
 from app.info.info import get_all_info, get_all_info_by_user_phone, remove_info, save_info, update_info
 from app.models import models
-from app.classes.classes import InfoCreate, MessageRequest, User
+from app.classes.classes import InfoCreate,  UserCreate
 from app.environments import (
     FLOW_WPP_PRIVATE_KEY,
     FLOW_WPP_PRIVATE_KEY_PASSWORD,
@@ -281,7 +281,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
                 print('\nline 282', flow_data, name,email,password, confirm_password, birthdate,)
                 
-                new_user = User(name=name,email=email,birthdate=birthdate,password=get_password_hash(confirm_password))
+                new_user = UserCreate(name=name,email=email,birthdate=birthdate,password=get_password_hash(confirm_password))
                 print('\n\nline 265 new_user:', new_user)
                 db.add(new_user)
                 db.commit()

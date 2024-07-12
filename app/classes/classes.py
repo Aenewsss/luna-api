@@ -39,6 +39,7 @@ class UserCreate(BaseModel):
     name: str
     email: EmailStr
     phone: str
+    birthdate: int
     password: str
 
 class InfoCreate(BaseModel):
