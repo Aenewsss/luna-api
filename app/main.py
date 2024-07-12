@@ -174,7 +174,8 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 },
             )
 
-            if response_data["template"]:
+
+            if response_data.get("template"):
                 # Send a WhatsApp message
                 response_data["template"]["to"] = user_phone
 
@@ -185,6 +186,47 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     json=response_data["template"],
                 )
 
+            template_message = {
+                "messaging_product": "whatsapp",
+                "type": "template",
+                "template": {
+                    "name": "choose_one_service",
+                    "language": {"code": "pt_BR"},
+                    "components": [
+                        {
+                            "type": "button",
+                            "sub_type": "quick_reply",
+                            "index": "0",
+                            "parameters": [{"type": "payload", "payload": "save_info"}],
+                        },
+                        {
+                            "type": "button",
+                            "sub_type": "quick_reply",
+                            "index": "1",
+                            "parameters": [{"type": "payload", "payload": "list_infos"}],
+                        },
+                        {
+                            "type": "button",
+                            "sub_type": "quick_reply",
+                            "index": "2",
+                            "parameters": [{"type": "payload", "payload": "update_info"}],
+                        },
+                        {
+                            "type": "button",
+                            "sub_type": "quick_reply",
+                            "index": "3",
+                            "parameters": [{"type": "payload", "payload": "remove_info"}],
+                        },
+                    ],
+                },
+            }
+        
+            requests.post(
+                f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                json=template_message
+            )
+            
             # Mark the message as read
             requests.post(
                 f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
