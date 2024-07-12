@@ -236,8 +236,10 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 infos = get_all_info_formatted_by_user_phone(user_phone, db)
                 response_text = "Aqui estão as suas informações: " + infos
             elif button_payload == "update_info":
+                print('\n line 239')
                 infos = get_all_info_by_user_phone(user_phone, db)
                 interactive_message = format_infos_to_interactive_message_update(infos)
+                print('\n line 242',interactive_message)
 
                 requests.post(
                     f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
@@ -250,8 +252,10 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
                 return Response(status_code=200)
             elif button_payload == "remove_info":
+                print('\n line 253')
                 infos = get_all_info_by_user_phone(user_phone, db)
                 interactive_message = format_infos_to_interactive_message_remove(infos)
+                print('\n line 256 interactive_message', interactive_message)
 
                 requests.post(
                     f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
