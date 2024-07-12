@@ -795,9 +795,9 @@ def encrypt_response(response, aes_key, iv):
 ######### END code to validate a flow ###########
 
 def format_infos_to_interactive_message_remove(infos, user_phone):
-    buttons = []
+    sections = []
     for i, info in enumerate(infos):
-        buttons.append({
+        sections.append({
             "type": "reply",
             "reply": {
                 "id": f"remove_info_{info.id}",
@@ -806,25 +806,26 @@ def format_infos_to_interactive_message_remove(infos, user_phone):
         })
 
     message = {
-        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
         "to": user_phone,  # Replace with actual recipient phone number
         "type": "interactive",
         "interactive": {
-            "type": "button",
+            "type": "list",
             "body": {
                 "text": "Abaixo estão suas informações. Escolha qual deseja excluir."
             },
             "action": {
-                "buttons": buttons
+                "button": "Enviar",
+                "sections": sections
             }
         }
     }
     return message
 
 def format_infos_to_interactive_message_update(infos, user_phone):
-    buttons = []
+    sections = []
     for i, info in enumerate(infos):
-        buttons.append({
+        sections.append({
             "type": "reply",
             "reply": {
                 "id": f"update_info_{info.id}",
@@ -833,16 +834,17 @@ def format_infos_to_interactive_message_update(infos, user_phone):
         })
 
     message = {
-        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
         "to": user_phone,  # Replace with actual recipient phone number
         "type": "interactive",
         "interactive": {
-            "type": "button",
+            "type": "list",
             "body": {
                 "text": "Abaixo estão suas informações. Escolha qual deseja atualizar."
             },
             "action": {
-                "buttons": buttons
+                "button": "Enviar",
+                "sections": sections
             }
         }
     }
