@@ -275,9 +275,9 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 flow_token = flow_data.get("flow_token")
                 name = flow_data.get("screen_0_TextInput_0")
                 email = flow_data.get("screen_0_TextInput_1")
-                password = flow_data.get("screen_0_TextInput_2")
-                confirm_password = flow_data.get("screen_0_TextInput_3")
-                birthdate = int(flow_data.get("screen_0_DatePicker_4"))
+                password = flow_data.get("screen_0_TextInput_3")
+                confirm_password = flow_data.get("screen_0_TextInput_4")
+                birthdate = int(flow_data.get("screen_0_DatePicker_2"))
 
                 print('\nline 282', flow_data, name,email,password, confirm_password, birthdate,)
                 
