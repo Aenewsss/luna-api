@@ -23,6 +23,17 @@ def get_all_info_by_user_phone(user_phone: int, db: Session):
     if not infos:
         return []
 
+    return infos
+
+def get_all_info_formatted_by_user_phone(user_phone: int, db: Session):
+
+    user = db.query(User).filter(User.phone == user_phone).first()
+    
+    infos = db.query(Info).filter(Info.user_id == user.id).all()
+
+    if not infos:
+        return []
+
     info_array = [InfoResponse.model_validate(info, from_attributes=True) for info in infos]
     info_str = "\n\n•".join(info.model_dump_json() for info in info_array)
     

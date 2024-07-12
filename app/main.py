@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from groq import Groq
 from requests import Session
 import requests
-from app.info.info import get_all_info, get_all_info_by_user_phone, remove_info, save_info, update_info
+from app.info.info import get_all_info, get_all_info_by_user_phone, get_all_info_formatted_by_user_phone, remove_info, save_info, update_info
 from app.models import models
 from app.classes.classes import InfoCreate,  UserCreate
 from app.environments import (
@@ -233,12 +233,36 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             if button_payload == "save_info":
                 response_text = "Por favor, diga o que deseja salvar"
             elif button_payload == "list_infos":
-                infos = get_all_info_by_user_phone(user_phone, db)
+                infos = get_all_info_formatted_by_user_phone(user_phone, db)
                 response_text = "Aqui estão as suas informações: " + infos
             elif button_payload == "update_info":
-                response_text = "Por favor, diga o que deseja atualizar"
+                infos = get_all_info_by_user_phone(user_phone, db)
+                interactive_message = format_infos_to_interactive_message_update(infos)
+
+                requests.post(
+                    f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                    headers={
+                        "Authorization": f"Bearer {GRAPH_API_TOKEN}",
+                        "Content-Type": "application/json"
+                    },
+                    json=interactive_message,
+                )
+
+                return Response(status_code=200)
             elif button_payload == "remove_info":
-                response_text = "Por favor, diga o que deseja remover"
+                infos = get_all_info_by_user_phone(user_phone, db)
+                interactive_message = format_infos_to_interactive_message_remove(infos)
+
+                requests.post(
+                    f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                    headers={
+                        "Authorization": f"Bearer {GRAPH_API_TOKEN}",
+                        "Content-Type": "application/json"
+                    },
+                    json=interactive_message,
+                )
+
+                return Response(status_code=200)
 
             requests.post(
                 f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
@@ -765,3 +789,57 @@ def encrypt_response(response, aes_key, iv):
     ).decode("utf-8")
 
 ######### END code to validate a flow ###########
+
+def format_infos_to_interactive_message_remove(infos):
+    buttons = []
+    for i, info in enumerate(infos):
+        buttons.append({
+            "type": "reply",
+            "reply": {
+                "id": f"remove_info_{info.id}",
+                "title": info.title
+            }
+        })
+
+    message = {
+        "messaging_product": "whatsapp",
+        "to": "recipient_phone_number",  # Replace with actual recipient phone number
+        "type": "interactive",
+        "interactive": {
+            "type": "button",
+            "body": {
+                "text": "Abaixo estão suas informações. Escolha qual deseja excluir."
+            },
+            "action": {
+                "buttons": buttons
+            }
+        }
+    }
+    return message
+
+def format_infos_to_interactive_message_update(infos):
+    buttons = []
+    for i, info in enumerate(infos):
+        buttons.append({
+            "type": "reply",
+            "reply": {
+                "id": f"update_info_{info.id}",
+                "title": info.title
+            }
+        })
+
+    message = {
+        "messaging_product": "whatsapp",
+        "to": "recipient_phone_number",  # Replace with actual recipient phone number
+        "type": "interactive",
+        "interactive": {
+            "type": "button",
+            "body": {
+                "text": "Abaixo estão suas informações. Escolha qual deseja atualizar."
+            },
+            "action": {
+                "buttons": buttons
+            }
+        }
+    }
+    return message
