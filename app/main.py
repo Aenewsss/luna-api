@@ -241,7 +241,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 interactive_message = format_infos_to_interactive_message_update(infos,user_phone)
                 print('\n line 242',interactive_message)
 
-                requests.post(
+                response = requests.post(
                     f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
                     headers={
                         "Authorization": f"Bearer {GRAPH_API_TOKEN}",
@@ -249,6 +249,10 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     },
                     json=interactive_message,
                 )
+                response_data = response.json()
+
+                if response.status_code != 200:
+                    raise HTTPException(status_code=response.status_code, detail=response_data)
 
                 return Response(status_code=200)
             elif button_payload == "remove_info":
@@ -257,7 +261,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 interactive_message = format_infos_to_interactive_message_remove(infos,user_phone)
                 print('\n line 256 interactive_message', interactive_message)
 
-                requests.post(
+                response = requests.post(
                     f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
                     headers={
                         "Authorization": f"Bearer {GRAPH_API_TOKEN}",
@@ -265,6 +269,10 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     },
                     json=interactive_message,
                 )
+                response_data = response.json()
+
+                if response.status_code != 200:
+                    raise HTTPException(status_code=response.status_code, detail=response_data)
 
                 return Response(status_code=200)
 
@@ -801,7 +809,7 @@ def format_infos_to_interactive_message_remove(infos, user_phone):
     }]
     
     for info in infos:
-        sections[0].rows.append({
+        sections[0]["rows"].append({
             "id": f"remove_info_{info.id}",
             "title": info.title,
             "description": info.content  # Optional: add a description
@@ -832,7 +840,7 @@ def format_infos_to_interactive_message_update(infos, user_phone):
     }]
     
     for info in infos:
-        sections[0].rows.append({
+        sections[0]["rows"].append({
             "id": f"update_info_{info.id}",
             "title": info.title,
             "description": info.content  # Optional: add a description
