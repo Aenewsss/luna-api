@@ -302,7 +302,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
             print('\nline 266', user_phone)
             
             interactive = message.get("interactive", {})
-            response_json = interactive["nfm_reply"].get("response_json") if interactive.get("nfm_reply") else interactive["list_reply"] 
+            response_json = interactive["nfm_reply"].get("response_json") if interactive.get("nfm_reply") else json.dumps(interactive["list_reply"]) 
             flow_data = json.loads(response_json)
 
             print('\nline 272', flow_data)
