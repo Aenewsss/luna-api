@@ -795,16 +795,16 @@ def encrypt_response(response, aes_key, iv):
 ######### END code to validate a flow ###########
 
 def format_infos_to_interactive_message_remove(infos, user_phone):
-    sections = [{
-        "title": "Your Infos",
-        "rows": []
-    }]
+    sections = []
     
     for info in infos:
-        sections[0]["rows"].append({
-            "id": f"remove_info_{info.id}",
-            "title": info.title,
-            "description": info.content  # Optional: add a description
+        sections.append({
+            "title":"title da section",
+            "rows":[{
+                "id": f"remove_info_{info.id}",
+                "title": info.title,
+                "description": info.content  # Optional: add a description
+            }]
         })
 
     message = {
@@ -825,16 +825,16 @@ def format_infos_to_interactive_message_remove(infos, user_phone):
     return message
 
 def format_infos_to_interactive_message_update(infos, user_phone):
-    sections = [{
-        "title": "Your Infos",
-        "rows": []
-    }]
+    sections = []
     
     for info in infos:
-        sections[0]["rows"].append({
-            "id": f"update_info_{info.id}",
-            "title": info.title,
-            "description": info.content  # Optional: add a description
+        sections.append({
+            "title":"title da section",
+            "rows":[{
+                "id": f"update_info_{info.id}",
+                "title": info.title,
+                "description": info.content  # Optional: add a description
+            }]
         })
 
     message = {
