@@ -21,9 +21,11 @@ class TokenData(BaseModel):
 
 class User(BaseModel):
     id: int
+    name: str
     email: str
     phone: str
-    name: str
+    birthdate: int
+    password: str
 
     class Config:
         from_attributes=True

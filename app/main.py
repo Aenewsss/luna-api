@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from groq import Groq
 from requests import Session
 import requests
-from app.info.info import get_all_info, remove_info, save_info, update_info
+from app.info.info import get_all_info, get_all_info_by_user_phone, remove_info, save_info, update_info
 from app.models import models
 from app.classes.classes import InfoCreate, MessageRequest, User
 from app.environments import (
@@ -22,7 +22,7 @@ from app.environments import (
 from app.constants.messages import messages
 from app.constants.tools import tools
 from app.constants.available_functions import available_functions
-from app.auth.auth import router as auth_router, validate_token
+from app.auth.auth import get_password_hash, router as auth_router, validate_token
 from app.database.database import engine, get_db
 from app.middlewares.user import UserMiddleware
 from app.models.models import User as UserModel
@@ -60,34 +60,6 @@ async def custom_exception_handler(request: Request, exc: Exception):
 async def hello_world():
     print("\nline 207\n")
     return {"message": "Hello World!"}
-
-
-@app.post("/wpp-flow")
-async def validate_wpp_flow(request: Request):
-    try:
-        data = await request.json()
-        print("Received data:", data)
-
-        encrypted_flow_data_b64 = data["encrypted_flow_data"]
-        encrypted_aes_key_b64 = data["encrypted_aes_key"]
-        initial_vector_b64 = data["initial_vector"]
-
-        decrypted_data, aes_key, iv = decrypt_request(
-            encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64
-        )
-        print("\ndecrypted_data:", decrypted_data)
-
-        # Return the next screen & data to the client
-        response = {"version": decrypted_data["version"], "data": {"status": "active"}}
-
-        # Return the response as plaintext
-        return Response(
-            content=encrypt_response(response, aes_key, iv), media_type="text/plain"
-        )
-    except Exception as e:
-        print("Error:", e)
-        return Response(status_code=500, content={"message": "Internal Server Error"})
-
 
 @app.get("/wpp-webhook")
 async def wpp_webhook(request: Request):
@@ -134,8 +106,9 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
         print("\nline 102 data", data, "\n")
 
+        business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
+
         if message.get("type") == "text":
-            business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
             if not business_phone_number_id:
                 raise HTTPException(status_code=200, detail="Invalid data")
 
@@ -153,7 +126,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                         "to": user_phone,
                         "type": "template",
                         "template": {
-                            "name": "register_flow",
+                            "name": "signup_flow",
                             "language": {"code": "pt_BR"},
                             "components": [
                                 {
@@ -223,8 +196,6 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 },
             )
         elif message.get("type") == "button":
-            business_phone_number_id = value.get("metadata", {}).get("phone_number_id")
-
             user_phone = message.get("from")
 
             button_payload = message.get("button", {}).get("payload")
@@ -252,8 +223,23 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     response_text = update_info(id, content, db)["text"]
             elif button_text == "Não":
                 response_text = "Solicitação cancelada."
+            elif button_text == "Criar rotina (Em breve)":
+                response_text = "Essa funcionalidade ainda não está disponível"
+            elif button_text == "Salvar uma informação":
+                response_text = "Então você é esquecido e quer ajuda para lembrar de algumas coisas? Fica tranquilo(a), é justamente por isso que estou aqui! Preciso que você deixe claro em sua solicitação o seguinte:\n•	Descrição da informação\n•	Informação a ser salva\n Aqui vai um exemplo: “Luna, salve a senha do meu email luna@gmail.com que é Luna123”\nNão se preocupe! Seus dados estão seguros comigo, sigo a LGPD (Lei Geral de Proteção de Dados) e todas as outras exigências para funcionar de acordo com o direto que você tem!"
 
-            # Send a response based on the button clicked
+
+
+            if button_payload == "save_info":
+                response_text = "Por favor, diga o que deseja salvar"
+            elif button_payload == "list_infos":
+                infos = get_all_info_by_user_phone(user_phone, db)
+                response_text = "Aqui estão as suas informações: " + infos
+            elif button_payload == "update_info":
+                response_text = "Por favor, diga o que deseja atualizar"
+            elif button_payload == "remove_info":
+                response_text = "Por favor, diga o que deseja remover"
+
             requests.post(
                 f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
                 headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
@@ -261,9 +247,6 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     "messaging_product": "whatsapp",
                     "to": user_phone,
                     "text": {"body": response_text},
-                    "context": {
-                        "message_id": message["id"]
-                    },  # Uncomment if you want to reply user message
                 },
             )
 
@@ -277,6 +260,74 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                     "message_id": message["id"],
                 },
             )
+        elif message.get("type") == "interactive":
+            user_phone = message.get("from")
+
+            interactive = message.get("interactive", {})
+            response_json = interactive["nfm_reply"].get("response_json")
+            flow_data = json.loads(response_json)
+
+            if flow_data.get("screen_0_TextInput_0") and flow_data.get("screen_0_TextInput_1") and flow_data.get("screen_0_TextInput_2") and flow_data.get("screen_0_TextInput_3") and flow_data.get("screen_0_TextInput_4"):
+                flow_token = flow_data.get("flow_token")
+                name = flow_data.get("screen_0_TextInput_0")
+                email = flow_data.get("screen_0_TextInput_1")
+                password = flow_data.get("screen_0_TextInput_2")
+                confirm_password = flow_data.get("screen_0_TextInput_3")
+                birthdate = flow_data.get("screen_0_DatePicker_4")
+                
+                new_user = User(name,email,birthdate,password=get_password_hash(confirm_password))
+                print('\n\nline 265 new_user:', new_user)
+                db.add(new_user)
+                db.commit()
+                db.refresh(new_user)
+
+                requests.post(f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                    headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                    json={
+                        "messaging_product": "whatsapp",
+                        "to": user_phone,
+                        "text": {"body": "Olá, Davi! Agora que lhe conheço, podemos começar! Primeiro gostaria de informar que temos um tutorial para que possa entender como eu posso lhe ajudar: https://lunaassistente.framer.ai, acesse sempre que tiver dúvidas!"},
+                    },
+                )
+
+                template_message = {
+                    "messaging_product": "whatsapp",
+                    "to": user_phone,
+                    "type": "template",
+                    "template": {
+                        "name": "choose_service",
+                        "language": {"code": "pt_BR"},
+                        "components": [
+                            {
+                                "type": "button",
+                                "sub_type": "quick_reply",
+                                "index": "0",
+                                "parameters": [{"type": "payload", "payload": "start_routine_flow"}],
+                            },
+                            {
+                                "type": "button",
+                                "sub_type": "quick_reply",
+                                "index": "1",
+                                "parameters": [{"type": "payload", "payload": "start_info_flow"}],
+                            },
+                        ],
+                    },
+                }
+
+                requests.post(f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                    headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                    json=template_message
+                )
+
+                # Mark the message as read
+                requests.post(f"https://graph.facebook.com/v18.0/{business_phone_number_id}/messages",
+                    headers={"Authorization": f"Bearer {GRAPH_API_TOKEN}"},
+                    json={
+                        "messaging_product": "whatsapp",
+                        "status": "read",
+                        "message_id": message["id"],
+                    },
+                )
 
         return Response(status_code=200)
 
@@ -312,7 +363,41 @@ async def chatLuna(db, user_message, user_id, user_name):
 
     if tool_calls == None:
         print("message:", completion.choices[0].message.content)
-        return {"text": completion.choices[0].message.content}
+        template_message = {
+            "messaging_product": "whatsapp",
+            "type": "template",
+            "template": {
+                "name": "choose_one_service",
+                "language": {"code": "pt_BR"},
+                "components": [
+                    {
+                        "type": "button",
+                        "sub_type": "quick_reply",
+                        "index": "0",
+                        "parameters": [{"type": "payload", "payload": "save_info"}],
+                    },
+                    {
+                        "type": "button",
+                        "sub_type": "quick_reply",
+                        "index": "1",
+                        "parameters": [{"type": "payload", "payload": "list_infos"}],
+                    },
+                    {
+                        "type": "button",
+                        "sub_type": "quick_reply",
+                        "index": "2",
+                        "parameters": [{"type": "payload", "payload": "update_info"}],
+                    },
+                    {
+                        "type": "button",
+                        "sub_type": "quick_reply",
+                        "index": "3",
+                        "parameters": [{"type": "payload", "payload": "remove_info"}],
+                    },
+                ],
+            },
+        }
+        return {"text": completion.choices[0].message.content, "template": template_message}
     else:
         for tool_call in tool_calls:
             name = tool_call.function.name
@@ -601,6 +686,33 @@ def final_tool_message(content, tool_call_id, name):
     completion = client.chat.completions.create(model=LLMODEL, messages=messages)
     return {"text": completion.choices[0].message.content}
 
+######### BEGIN code to validate a flow ###########
+@app.post("/wpp-flow")
+async def validate_wpp_flow(request: Request):
+    try:
+        data = await request.json()
+        print("Received data:", data)
+
+        encrypted_flow_data_b64 = data["encrypted_flow_data"]
+        encrypted_aes_key_b64 = data["encrypted_aes_key"]
+        initial_vector_b64 = data["initial_vector"]
+
+        decrypted_data, aes_key, iv = decrypt_request(
+            encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64
+        )
+        print("\ndecrypted_data:", decrypted_data)
+
+        # Return the next screen & data to the client
+        response = {"version": decrypted_data["version"], "data": {"status": "active"}}
+
+        # Return the response as plaintext
+        return Response(
+            content=encrypt_response(response, aes_key, iv), media_type="text/plain"
+        )
+    except Exception as e:
+        print("Error:", e)
+        return Response(status_code=500, content={"message": "Internal Server Error"})
+
 
 def decrypt_request(encrypted_flow_data_b64, encrypted_aes_key_b64, initial_vector_b64):
     flow_data = b64decode(encrypted_flow_data_b64)
@@ -645,3 +757,5 @@ def encrypt_response(response, aes_key, iv):
         + encryptor.finalize()
         + encryptor.tag
     ).decode("utf-8")
+
+######### END code to validate a flow ###########

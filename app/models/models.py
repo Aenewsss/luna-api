@@ -9,6 +9,7 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String,unique=True, nullable=False)
     phone = Column(String,unique=True, nullable=False)
+    birthdate = Column(Integer, nullable=False)
     password = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'))
 
