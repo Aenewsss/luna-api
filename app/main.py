@@ -263,9 +263,13 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
         elif message.get("type") == "interactive":
             user_phone = message.get("from")
 
+            print('\nline 266', user_phone)
+            
             interactive = message.get("interactive", {})
             response_json = interactive["nfm_reply"].get("response_json")
             flow_data = json.loads(response_json)
+
+            print('\nline 272', flow_data)
 
             if flow_data.get("screen_0_TextInput_0") and flow_data.get("screen_0_TextInput_1") and flow_data.get("screen_0_TextInput_2") and flow_data.get("screen_0_TextInput_3") and flow_data.get("screen_0_TextInput_4"):
                 flow_token = flow_data.get("flow_token")
@@ -274,6 +278,8 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
                 password = flow_data.get("screen_0_TextInput_2")
                 confirm_password = flow_data.get("screen_0_TextInput_3")
                 birthdate = flow_data.get("screen_0_DatePicker_4")
+
+                print('\nline 282', flow_data, name,email,password, confirm_password, birthdate,)
                 
                 new_user = User(name,email,birthdate,password=get_password_hash(confirm_password))
                 print('\n\nline 265 new_user:', new_user)
