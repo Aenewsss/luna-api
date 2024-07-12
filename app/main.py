@@ -570,7 +570,7 @@ def chat_to_save_data(user_id: int, user_message: str, db: Session):
                 second_completion = client.chat.completions.create(
                     model=LLMODEL, messages=messages
                 )
-                return second_completion.choices[0].message.content
+                return {"text":second_completion.choices[0].message.content}
 
 
 def flow_save_info(
