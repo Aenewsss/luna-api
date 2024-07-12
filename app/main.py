@@ -271,7 +271,7 @@ async def chat_wpp(request: Request, db: Session = Depends(get_db)):
 
             print('\nline 272', flow_data)
 
-            if flow_data.get("screen_0_TextInput_0") and flow_data.get("screen_0_TextInput_1") and flow_data.get("screen_0_TextInput_2") and flow_data.get("screen_0_TextInput_3") and flow_data.get("screen_0_TextInput_4"):
+            if flow_data.get("screen_0_TextInput_0") and flow_data.get("screen_0_TextInput_1") and flow_data.get("screen_0_DatePicker_2") and flow_data.get("screen_0_TextInput_3") and flow_data.get("screen_0_TextInput_4"):
                 flow_token = flow_data.get("flow_token")
                 name = flow_data.get("screen_0_TextInput_0")
                 email = flow_data.get("screen_0_TextInput_1")
