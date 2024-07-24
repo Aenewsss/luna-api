@@ -19,7 +19,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_all_info",
-            "description": "Listar todas as informações do usuário",
+            "description": "Listar todas as informações do usuário caso seja isso que o mesmo tenha pedido",
             "parameters": {
                 "type": "object",
                 "properties": {
