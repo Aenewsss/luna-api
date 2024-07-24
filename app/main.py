@@ -543,6 +543,8 @@ async def chatLuna(db, user_message, user_id, user_name):
 
     if tool_calls == None:
         response_message = completion.choices[0].message.content
+        if 'tool_use' in response_message:
+            chatLuna(db,user_message,user_id,user_name)
         print("response_message:", response_message)
 
         save_info(InfoCreate(user_id=user_id, title=response_message, content=user_message), db)

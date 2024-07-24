@@ -9,7 +9,7 @@ messages = [
     },
     {
         "role": "system",
-        "content": "Sempre que você receber uma mensagem, você deve atribuir um título curto para ela, pois eu irei salvar esse título como referência da mensagem",
+        "content": "Toda e qualquer mensagem que você receber uma mensagem, você deve atribuir um título curto para ela, uma espécie de resumo, pois irei usar esse título como referência da mensagem para salvá-la no banco de dados",
     },
     # {
     #     "role": "system",
