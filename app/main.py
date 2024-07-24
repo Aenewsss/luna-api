@@ -633,11 +633,10 @@ def flow_save_info(
         return chat_to_save_data(user_id, user_message, db)
     else:
         title = arguments["title"]
-        content = arguments["content"]
         function = available_functions[name]
 
         response = function(
-            InfoCreate(user_id=user_id, title=title, content=content), db
+            InfoCreate(user_id=user_id, title=title, content=user_message), db
         )
 
         return final_tool_message(response, tool_call_id, name)
