@@ -9,24 +9,28 @@ messages = [
     },
     {
         "role": "system",
-        "content": "Sempre que possuir um link na pergunta, verifique se é para salvar uma informação baseada nesse link. Em caso de dúvida, pergunte se o usuário gostaria de salvar a informação.",
+        "content": "Sempre que você receber uma mensagem, você deve atribuir um título curto para ela, pois eu irei salvar esse título como referência da mensagem",
     },
-    {
-        "role": "system",
-        "content": "Quando alguém pedir para você salvar alguma informação, você vai separar os dados da seguinte forma: title={'aqui vem o título que marca a informação principal'};content={'conteúdo em string com a informação que o usuário quer salvar'} e usar os dados resgatados da função save_info definida em suas tools para trazer a mensagem de retorno.",
-    },
+    # {
+    #     "role": "system",
+    #     "content": "Sempre que possuir um link na pergunta, verifique se é para salvar uma informação baseada nesse link. Em caso de dúvida, pergunte se o usuário gostaria de salvar a informação.",
+    # },
+    # {
+    #     "role": "system",
+    #     "content": "Quando alguém pedir para você salvar alguma informação, você vai separar os dados da seguinte forma: title={'aqui vem o título que marca a informação principal'};content={'conteúdo em string com a informação que o usuário quer salvar'} e usar os dados resgatados da função save_info definida em suas tools para trazer a mensagem de retorno.",
+    # },
     {
         "role": "system",
         "content": "Quando alguém pedir para você listar as informações, você vai chamar a função get_all_info definida em suas tools para trazer todas as informações salvas do usuário.",
     },
-    {
-        "role": "system",
-        "content": "Quando alguém pedir para você remover alguma informação,  você vai chamar a função remove_info de suas tools.",
-    },
-    {
-        "role": "system",
-        "content": "Quando alguém pedir para você atualizar, editar ou alterar alguma informação, você não vai explicar como fazer, mas você vai chamar a função update_info de suas tools.",
-    },
+    # {
+    #     "role": "system",
+    #     "content": "Quando alguém pedir para você remover alguma informação,  você vai chamar a função remove_info de suas tools.",
+    # },
+    # {
+    #     "role": "system",
+    #     "content": "Quando alguém pedir para você atualizar, editar ou alterar alguma informação, você não vai explicar como fazer, mas você vai chamar a função update_info de suas tools.",
+    # },
     {
         "role": "system",
         "content": "Quando alguém te agradecer por qualquer motivo, retribua o agradecimento e diga que está aqui para ajudar.",

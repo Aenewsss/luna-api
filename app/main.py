@@ -542,42 +542,12 @@ async def chatLuna(db, user_message, user_id, user_name):
     tool_calls = completion.choices[0].message.tool_calls
 
     if tool_calls == None:
-        print("message:", completion.choices[0].message.content)
-        template_message = {
-            "messaging_product": "whatsapp",
-            "type": "template",
-            "template": {
-                "name": "choose_one_service",
-                "language": {"code": "pt_BR"},
-                "components": [
-                    {
-                        "type": "button",
-                        "sub_type": "quick_reply",
-                        "index": "0",
-                        "parameters": [{"type": "payload", "payload": "save_info"}],
-                    },
-                    {
-                        "type": "button",
-                        "sub_type": "quick_reply",
-                        "index": "1",
-                        "parameters": [{"type": "payload", "payload": "list_infos"}],
-                    },
-                    {
-                        "type": "button",
-                        "sub_type": "quick_reply",
-                        "index": "2",
-                        "parameters": [{"type": "payload", "payload": "update_info"}],
-                    },
-                    {
-                        "type": "button",
-                        "sub_type": "quick_reply",
-                        "index": "3",
-                        "parameters": [{"type": "payload", "payload": "remove_info"}],
-                    },
-                ],
-            },
-        }
-        return {"text": completion.choices[0].message.content, "template": template_message}
+        response_message = completion.choices[0].message.content
+        print("response_message:", response_message)
+
+        save_info(InfoCreate(user_id=user_id, title=response_message, content=user_message), db)
+    
+        return {"text": "Informação salva com sucesso"}
     else:
         for tool_call in tool_calls:
             name = tool_call.function.name
